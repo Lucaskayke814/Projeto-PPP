@@ -38,8 +38,8 @@ Ordem operacional:
 
 1. Criar rede e regionais com códigos estáveis.
 2. Importar escolas com INEP validado e regional conferida.
-3. Criar usuários no Supabase Auth e conceder `memberships` com o menor escopo necessário.
-4. Criar a primeira `content_releases`, revisar os `catalog_options` e gravar o ponteiro em `network_settings`.
+3. Criar usuários no Supabase Auth e conceder `vinculos_usuario` com o menor escopo necessário.
+4. Criar a primeira `publicacoes_conteudo`, revisar as `opcoes_catalogo` e gravar o ponteiro em `configuracoes_rede`.
 5. Testar RLS com uma conta de escola, uma regional e uma central antes de abrir o frontend.
 
 ## Arquivos
