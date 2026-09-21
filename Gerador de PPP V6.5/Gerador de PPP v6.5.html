@@ -1208,8 +1208,6 @@ body.modo-edicao [data-cur].alterado-agora{background:rgba(31,122,85,.10);outlin
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <footer class="foot">Gerador de PPP · Percurso formativo · Backend: Google Sheets + Apps Script · v6.4 · 2026</footer>
 
-<script src="supabase-config.js"></script>
-<script src="supabase-bridge.js"></script>
 <script>
 /* ==========================================================
    1. VÍDEOS — cole o ID do YouTube de cada tela formativa.
@@ -2365,7 +2363,6 @@ const TELAS = [
    4. Estado
    ========================================================== */
 const APP = {local:(typeof google === 'undefined' || !google.script || !google.script.run),
-             supabase:(window.GeradorPPPSupabase && window.GeradorPPPSupabase.ativo()),
              objetivosAnteriores:'', indicadoresAnteriores:'',
              sessao: 's-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8),
              urlApp:'',
@@ -2430,12 +2427,6 @@ function dataBR(iso){ if(!iso) return ''; const p = iso.split('-'); return p.len
    5. Servidor
    ========================================================== */
 function servidor(fn, args, ok, erro){
-  if(window.GeradorPPPSupabase && window.GeradorPPPSupabase.suporta(fn)){
-    window.GeradorPPPSupabase.chamar(fn, args).then(ok).catch(function(e){
-      console.error(e); if(erro) erro(e); else alert('O Supabase não conseguiu concluir esta ação. Nada foi perdido: tente novamente em instantes.');
-    });
-    return;
-  }
   if(APP.local){ simuladorLocal(fn, args, ok); return; }
   google.script.run.withSuccessHandler(ok)
     .withFailureHandler(function(e){
@@ -5132,7 +5123,6 @@ function sairSessao(){
      !confirm('Há alterações de texto em rascunho, ainda não publicadas.\n\nSair mesmo assim? O rascunho fica guardado e você o encontra ao entrar de novo.')) return;
   SESSAO.token = ''; SESSAO.perfil = ''; SESSAO.modo = ''; SESSAO.sre = ''; SESSAO.nome = '';
   CUR.token = ''; CUR.rascunhos = {};
-  if(window.GeradorPPPSupabase && window.GeradorPPPSupabase.ativo()) window.GeradorPPPSupabase.sair().catch(console.error);
   sairEdicao(true);
   $('#painelInst').hidden = true;
   $('#stage').hidden = false;
@@ -5737,7 +5727,7 @@ function iniciar(){
   irPara(0, true);
 }
 function bootstrap(){
-  if(APP.local && !APP.supabase){
+  if(APP.local){
     $('#demoRibbon').hidden = false;
     $('#badgeUser').textContent = 'modo demonstração';
     APP.curadoria = true; APP.curador = true; APP.senhaDefinida = false; APP.acessoInstitucional = true;

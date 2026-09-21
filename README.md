@@ -19,4 +19,4 @@ Após a execução do workflow **Publicar GitHub Pages**, o protótipo pode ser 
 
 O banco é estruturado para usar Supabase Auth, PostgreSQL, Storage privado e RLS. A fonte de verdade de toda mudança de schema são as migrations. Consulte [a arquitetura do banco](docs/database-architecture.md) e [a operação local](docs/supabase-local.md) antes de vincular um projeto remoto.
 
-O protótipo também possui uma [ponte opcional para o Supabase](docs/supabase-legacy-bridge.md). Ela mantém o modo demonstração e ativa persistência real de rascunhos somente após provisionamento e configuração local explícitos.
+O protótipo em `Gerador de PPP V6.5/` é uma referência imutável. A integração com Supabase e a nova interface serão implementadas exclusivamente em `apps/web/`.
