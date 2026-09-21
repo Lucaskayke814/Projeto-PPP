@@ -1,0 +1,14 @@
+# Secrets and local Supabase state
+.env
+.env.*
+!.env.example
+Supabase pass.txt
+.tools/
+supabase/.temp/
+supabase/.branches/
+
+# Generated dependencies and reports
+node_modules/
+coverage/
+dist/
+*.log

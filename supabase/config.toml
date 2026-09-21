@@ -1,0 +1,25 @@
+project_id = "gerador-ppp"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "app"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry_limit = 14400
+
+[auth.email]
+enable_signup = false
+confirm_changes = true
+
+[storage]
+enabled = true
+file_size_limit = "12MiB"
