@@ -1,0 +1,40 @@
+name: Publicar GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+      - name: Preparar site público
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          cp -R "Gerador de PPP V6.5" _site/
+          rm -f "_site/Gerador de PPP V6.5/supabase-config.js"
+      - name: Enviar artefato estático
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publicar
+        id: deploy
+        uses: actions/deploy-pages@v4

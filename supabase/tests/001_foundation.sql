@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(18);
 
 select has_table('public', 'versoes_ppp', 'Versões de PPP existem');
 select has_table('public', 'revisoes_ppp', 'Revisões imutáveis existem');
@@ -13,6 +13,10 @@ select policies_are('public', 'versoes_ppp', array['versions by scope'], 'Versõ
 select policies_are('public', 'revisoes_ppp', array['revisions by scope'], 'Revisões seguem o escopo da versão');
 select has_function('public', 'create_ppp_draft', array['uuid', 'jsonb'], 'RPC cria rascunho sem escrita direta');
 select has_function('public', 'save_ppp_draft', array['uuid', 'bigint', 'jsonb', 'text', 'jsonb'], 'RPC salva nova revisão');
+select has_function('public', 'obter_contexto_usuario', array[]::text[], 'RPC retorna somente o contexto do usuário autenticado');
+select has_function('public', 'obter_ppp_por_protocolo', array['text'], 'RPC recupera PPP pelo protocolo com RLS');
+select has_function('public', 'listar_painel_ppp', array['jsonb'], 'RPC fornece painel filtrado por escopo');
+select has_function('public', 'obter_conteudo_institucional_ativo', array[]::text[], 'RPC lê publicação institucional ativa');
 select is((select count(*) from public.opcoes_catalogo), 75::bigint, 'Seed contém as 75 opções de catálogo do protótipo');
 select is((select public from storage.buckets where id = 'ppp-private'), false, 'Bucket de PPP é privado');
 

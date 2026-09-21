@@ -4,6 +4,7 @@
 !.env.example
 Supabase pass.txt
 .tools/
+Gerador de PPP V6.5/supabase-config.js
 supabase/.temp/
 supabase/.branches/
 
