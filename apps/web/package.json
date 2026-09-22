@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "prepare:reference": "node scripts/prepare-reference.mjs",
+    "dev": "npm run prepare:reference && vite",
+    "build": "npm run prepare:reference && tsc --noEmit && vite build",
     "test": "vitest run"
   },
   "dependencies": {

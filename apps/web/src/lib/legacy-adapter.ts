@@ -36,26 +36,26 @@ export function toRevisionAnswers(draft: LegacyDraft): Record<string, unknown> {
 }
 
 export async function createDraft(schoolId: string, draft: LegacyDraft): Promise<PersistedDraft> {
-  const { data, error } = await supabase.rpc('create_ppp_draft', {
-    target_school_id: schoolId,
-    initial_answers: toRevisionAnswers(draft),
+  const { data, error } = await supabase.rpc('criar_rascunho_ppp', {
+    escola_destino_id: schoolId,
+    respostas_iniciais: toRevisionAnswers(draft),
   });
   if (error) throw error;
   const row = data?.[0];
   if (!row) throw new Error('O banco não retornou a versão criada.');
-  return { versionId: row.version_id, protocol: row.protocol, revision: Number(row.revision_number), progressRevision: Number(row.progress_revision) };
+  return { versionId: row.versao_ppp_id, protocol: row.protocolo, revision: Number(row.numero_revisao), progressRevision: Number(row.numero_revisao_progresso) };
 }
 
 export async function saveDraft(versionId: string, expectedRevision: number, draft: LegacyDraft): Promise<PersistedDraft> {
-  const { data, error } = await supabase.rpc('save_ppp_draft', {
-    target_version_id: versionId,
-    expected_revision: expectedRevision,
-    next_answers: toRevisionAnswers(draft),
-    next_screen_key: screenKeyFor(draft.tela),
-    next_tasks: draft.tarefas,
+  const { data, error } = await supabase.rpc('salvar_rascunho_ppp', {
+    versao_ppp_destino_id: versionId,
+    revisao_esperada: expectedRevision,
+    proximas_respostas: toRevisionAnswers(draft),
+    proxima_tela_atual_chave: screenKeyFor(draft.tela),
+    proximas_tarefas: draft.tarefas,
   });
   if (error) throw error;
   const row = data?.[0];
   if (!row) throw new Error('O banco não retornou a revisão gravada.');
-  return { versionId, protocol: draft.protocolo ?? '', revision: Number(row.revision_number), progressRevision: Number(row.progress_revision) };
+  return { versionId, protocol: draft.protocolo ?? '', revision: Number(row.numero_revisao), progressRevision: Number(row.numero_revisao_progresso) };
 }

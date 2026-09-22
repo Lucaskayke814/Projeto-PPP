@@ -1,0 +1,2 @@
+-- Reservada para compatibilidade com o histórico de migrations.
+-- Usuários de desenvolvimento não pertencem ao schema e são criados por seed manual.

@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('./supabase', () => ({ supabase: { rpc: vi.fn() } }));
+
 import { toRevisionAnswers } from './legacy-adapter';
 
 describe('adapter v6.5', () => {

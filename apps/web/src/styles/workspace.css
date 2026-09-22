@@ -1,0 +1,46 @@
+﻿/* Camada não visual: acessibilidade, compatibilidade e impressão da cópia de trabalho. */
+:root {
+  --espaco-1: 8px;
+  --espaco-2: 12px;
+  --espaco-3: 16px;
+  --raio-controle: 8px;
+  --sombra-sobreposta: 0 8px 20px rgba(20, 42, 68, .10);
+}
+
+/* Mantém a indicação de foco após navegação programática. */
+h2[tabindex='-1']:focus-visible { outline: 2px solid var(--azul-medio); outline-offset: 4px; }
+
+/* Fallback equivalente aos estados que dependem de :has(). */
+.opt input:checked + .box,
+.tarefa input:checked + .bx,
+.declara input:checked + .bx { background: var(--azul-inst); border-color: var(--azul-inst); }
+.opt input:checked + .box svg,
+.tarefa input:checked + .bx svg,
+.declara input:checked + .bx svg { opacity: 1; transform: scale(1); }
+.switch-wrap input:checked + .sw { background: var(--azul-inst); }
+.switch-wrap input:checked + .sw::after { transform: translateX(16px); }
+
+/* A retomada permanece legível em telas pequenas e com zoom elevado. */
+@media (max-width: 520px) {
+  .land-retomar.open { align-items: stretch; flex-wrap: wrap; }
+  .land-retomar.open input { min-width: 100%; }
+  .land-retomar.open #btnBuscar { width: 100%; }
+  #sugestoesProtocolosTeste { width: 100%; }
+  .overlay { padding: var(--espaco-2); }
+  .landing-card { padding: 24px 20px; }
+}
+
+/* Evita que barras fixas ocultem conteúdo quando há pouco espaço vertical. */
+@media (max-height: 620px) {
+  .col-doc { position: static; height: auto; }
+  .trilha { position: static; }
+}
+
+/* Documento para impressão: sem controles e sem fundo decorativo. */
+@media print {
+  .top, .trilha, .nav-row, .col-doc, .toast, .overlay, .barra-edicao, .demo-ribbon { display: none !important; }
+  body, .stage, .main, .col-form, .paper { background: #fff !important; box-shadow: none !important; }
+  .paper { max-width: none !important; padding: 0 !important; }
+  .doc h3.doc-h { break-after: avoid; }
+  .doc p, .doc table { break-inside: avoid; }
+}
