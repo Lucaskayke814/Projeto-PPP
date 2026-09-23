@@ -13,7 +13,7 @@ export const emptyPppDraft = (): PppDraftState => ({
   versionId: null,
   revision: null,
   status: 'rascunho',
-  screenKey: 't00',
+  screenKey: 't02',
   answers: {},
   tasks: {},
 });

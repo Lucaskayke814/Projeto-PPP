@@ -1,16 +1,12 @@
-# Supabase local e banco do Gerador de PPP
+﻿# Banco Supabase: operacao local e homologacao
 
-O repositório usa Supabase para PostgreSQL, Auth, RLS, Storage privado e Edge Functions. O HTML v6.5 continua sendo o protótipo e o modo demonstração continua ativo até que a integração por adaptador seja ligada.
+O banco do Gerador de PPP usa PostgreSQL, Supabase Auth, Row Level Security (RLS) e Storage privado. As migrations em `supabase/migrations` sao a fonte de verdade do schema. Nunca altere uma migration aplicada; crie outra migration aditiva.
 
-## Pré-requisitos
+## Ambiente local
 
-Instale Docker Desktop e a CLI do Supabase. Não use o arquivo `Supabase pass.txt` como configuração de aplicação. Ele está ignorado pelo Git e não deve ser copiado para `.env` nem para código.
-
-Crie `.env` a partir de `.env.example`. A chave `service_role` só é permitida em secrets de Edge Functions ou automação protegida; nunca em `apps/web` ou HTML.
-
-## Banco local
-
-Na raiz do projeto:
+1. Instale Docker Desktop e a CLI do Supabase.
+2. Copie `.env.example` para `.env.local` e informe apenas `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` para a aplicacao web.
+3. Na raiz, execute:
 
 ```powershell
 supabase start
@@ -18,9 +14,11 @@ supabase db reset
 supabase test db
 ```
 
-`db reset` recria somente o banco local do Supabase. Não aponte `SUPABASE_DB_URL` para produção ao executar esse comando.
+`supabase db reset` remove somente os dados do banco local. Nunca use esse comando apontado ao projeto remoto.
 
-Para aplicar migrations em um projeto Supabase remoto já vinculado:
+## Homologacao
+
+O projeto remoto deve estar vinculado por referencia, sem senha salva em codigo:
 
 ```powershell
 supabase login
@@ -28,27 +26,31 @@ supabase link --project-ref SEU_PROJECT_REF
 supabase db push
 ```
 
-Antes de `db push`, faça backup, revise o plano gerado e confirme que o projeto é o ambiente correto. O processo não inclui criação automática de escolas, usuários ou conteúdo pedagógico publicado.
+Antes de aplicar migrations: gere um backup, confira o projeto exibido pela CLI e revise as migrations pendentes. A chave `service_role`, a senha PostgreSQL e qualquer token administrativo ficam apenas em secrets de Edge Functions ou em automacao protegida. Eles nunca entram em HTML, JavaScript ou Git.
 
-## Provisionamento inicial
+## Banco criado
 
-As migrations criam estados, papéis, permissões, grupos de catálogo, blueprints de opções atuais e o schema do formulário. A rede, as regionais, as escolas e a primeira publicação pedagógica são deliberadamente provisionadas por administrador após validar a origem normativa. Isso evita publicar como dado oficial as listas e referências que o protótipo ainda marca como provisórias.
+- Organizacao: `redes_ensino`, `regionais_ensino`, `escolas`.
+- Identidade e escopo: `perfis_usuarios`, `vinculos_usuarios`, `provisionamentos_acesso`.
+- PPP: documento, versao, revisao, respostas relacionais, progresso, participantes, arquivos e eventos.
+- Conteudo institucional: publicacoes imutaveis, itens publicados e rascunhos por curador.
+- Administracao central: consulta paginada, auditoria, cadastro/importacao de escolas e ciclo de provisionamento.
 
-Ordem operacional:
+As respostas do PPP sao persistidas em tabelas relacionais. JSONB aparece somente na entrada e saida das RPCs e nos valores flexiveis de conteudo institucional; nao existe JSONB persistente em revisoes do PPP.
 
-1. Criar rede e regionais com códigos estáveis.
-2. Importar escolas com INEP validado e regional conferida.
-3. Criar usuários no Supabase Auth e conceder `vinculos_usuario` com o menor escopo necessário.
-4. Criar a primeira `publicacoes_conteudo`, revisar as `opcoes_catalogo` e gravar o ponteiro em `configuracoes_rede`.
-5. Testar RLS com uma conta de escola, uma regional e uma central antes de abrir o frontend.
+## Backup e restauracao
 
-## Arquivos
+Para homologacao e producao, habilite os backups gerenciados no painel Supabase e teste a restauracao em um projeto separado. Antes de uma mudanca relevante, gere tambem um dump logico protegido em maquina administrativa:
 
-| Caminho | Uso |
-| --- | --- |
-| `supabase/migrations` | Fonte de verdade do schema, na ordem do timestamp |
-| `supabase/tests` | Testes pgTAP executados por `supabase test db` |
-| `supabase/functions/ppp-api` | Fachada HTTP mínima para RPCs já implementadas |
-| `apps/web/src/lib/legacy-adapter.ts` | Conversão do estado v6.5 em respostas versionadas |
+```powershell
+pg_dump --format=custom --no-owner --file .\backup-ppp.dump "postgresql://postgres:SENHA@db.SEUPROJETO.supabase.co:5432/postgres"
+pg_restore --list .\backup-ppp.dump
+```
 
-As próximas migrations devem ser novas e aditivas. Não reescreva uma migration que já tenha sido aplicada a qualquer ambiente compartilhado.
+Restaure somente em ambiente isolado e validado. O restore completo nao deve ser usado para sobrescrever producao durante o funcionamento normal.
+
+## Testes de banco
+
+`supabase/tests/001_estrutura_base.sql` verifica o schema e as RPCs essenciais. `002_fluxo_rascunho.sql` cobre criacao, salvamento, retomada e RLS do PPP. `003_fundacao_orgao_central_remoto.sql` valida a fundacao central com uma conta real de desenvolvimento. `004_administracao_central.sql` verifica importacao, convites, curadoria e integridade de escopo.
+
+Os testes que criam registros temporarios devem ser executados em desenvolvimento ou homologacao, nunca em producao.

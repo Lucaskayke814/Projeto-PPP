@@ -1,0 +1,410 @@
+<script>
+/* ============================================================
+   MODO DE DEMONSTRAÇÃO (v8.0, proposta 12)
+
+   Até a 7.9 a demonstração tinha um servidor próprio — simuladorLocal,
+   mil e cem linhas que reimplementavam as regras do Code.gs. Sempre que
+   as duas implementações divergiam, a demonstração aceitava o que a
+   implantação recusaria (foi uma classe inteira de defeitos: T-16).
+
+   Agora não há segundo servidor. Esta build carrega o Code.gs REAL sobre
+   os serviços simulados de simulador-servicos.js, semeia as abas com uma
+   base fictícia e despacha cada chamada da tela para ele. O que a
+   demonstração recusa é o que a implantação recusa, pelo mesmo código.
+
+   Nada disto vai para o Apps Script: só existe no arquivo único da
+   demonstração, montado por montar.js --demo.
+   ============================================================ */
+(function () {
+  'use strict';
+  if (!APP.local) return;            // implantado, a demonstração não existe
+
+  /* ---------- a base fictícia ---------- */
+  const ESCOLA_DEMO = {inep:'31100001', nome:'Escola Estadual Professor João Ribeiro', sre:'Divinópolis', municipio:'Divinópolis'};
+
+  /* Escolas da rede na demonstração. */
+  const SEMENTE_ESCOLAS = [
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', municipio:'Divinópolis', sre:'Divinópolis', situacao:'ativa', censo:'31088101'},
+    {inep:'31123456', escola:'Escola Estadual Horizonte do Saber', municipio:'Divinópolis', sre:'Divinópolis', situacao:'ativa', censo:'31088102'},
+    {inep:'31123457', escola:'Escola Estadual Padre João Ribeiro', municipio:'Divinópolis', sre:'Divinópolis', situacao:'ativa', censo:'31088103'},
+    {inep:'31123458', escola:'Escola Estadual do Campo Boa Esperança', municipio:'Santo Antônio do Monte', sre:'Divinópolis', situacao:'ativa', censo:'31088104'},
+    {inep:'31123459', escola:'Escola Estadual Dona Maria da Glória', municipio:'Formiga', sre:'Divinópolis', situacao:'ativa', censo:'31088105'},
+    {inep:'31123460', escola:'Escola Estadual Vale do Rio Pará', municipio:'Nova Serrana', sre:'Divinópolis', situacao:'ativa', censo:'31088106'},
+    {inep:'31123462', escola:'Escola Estadual São Sebastião do Oeste', municipio:'São Sebastião do Oeste', sre:'Divinópolis', situacao:'ativa', censo:'31088107'},
+    /* v7.7 (P5): uma escola que ainda não começou o PPP — aparece na cobertura como "sem PPP" */
+    {inep:'31123463', escola:'Escola Estadual Nova Aurora', municipio:'Itaúna', sre:'Divinópolis', situacao:'ativa', censo:'31088108'},
+    {inep:'31200011', escola:'Escola Estadual Carlos Drummond', municipio:'Belo Horizonte', sre:'Metropolitana A', situacao:'ativa', censo:'31088201'},
+    {inep:'31200012', escola:'Escola Estadual Serra Verde', municipio:'Belo Horizonte', sre:'Metropolitana A', situacao:'ativa', censo:'31088202'},
+    {inep:'31300021', escola:'Escola Estadual do Triângulo', municipio:'Uberlândia', sre:'Uberlândia', situacao:'ativa', censo:'31088301'},
+    {inep:'31400031', escola:'Escola Estadual Quilombola Vila Nova', municipio:'Montes Claros', sre:'Montes Claros', situacao:'ativa', censo:'31088401'},
+    {inep:'31400032', escola:'Escola Estadual Norte de Minas', municipio:'Montes Claros', sre:'Montes Claros', situacao:'ativa', censo:'31088402'}
+  ];
+
+  /* Acessos cadastrados. É por eles que a escolha do perfil na abertura
+     funciona: escolher um papel é dizer "foi esta conta que abriu o app",
+     e daí em diante quem decide é o cadastro, como na implantação. */
+  const SEMENTE_ACESSOS = [
+    {email:'central@educacao.mg.gov.br', nome:'Coordenação do Órgão Central', papel:'central', perfil:'central', sre:'', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'02/09/2026 09:00', comSenha:true},
+    {email:'super.divinopolis@educacao.mg.gov.br', nome:'Superintendente de Divinópolis', papel:'superintendente', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'02/09/2026 10:12', comSenha:true},
+    {email:'dire.divinopolis@educacao.mg.gov.br', nome:'Cristina Diretora Educacional', papel:'diretor_educacional', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'02/09/2026 10:40', comSenha:true},
+    {email:'de2.divinopolis@educacao.mg.gov.br', nome:'Hélio Diretor Educacional', papel:'diretor_educacional', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'', comSenha:true},
+    {email:'analista.divinopolis@educacao.mg.gov.br', nome:'Analista da Diretoria Educacional', papel:'equipe_de', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'01/09/2026 16:20', comSenha:true},
+    {email:'inspecao.divinopolis@educacao.mg.gov.br', nome:'Coordenadora de Inspeção', papel:'coordenador_inspecao', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'', comSenha:true},
+    {email:'inspetor.divinopolis@educacao.mg.gov.br', nome:'Inspetor Escolar do setor 3', papel:'equipe_inspecao', perfil:'regional', sre:'Divinópolis', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'', comSenha:true},
+    {email:'super.metropolitana.a@educacao.mg.gov.br', nome:'Superintendente Metropolitana A', papel:'superintendente', perfil:'regional', sre:'Metropolitana A', inep:'', escola:'', situacao:'ativo', ultimoAcesso:'', comSenha:true},
+    {email:'direcao.31100001@educacao.mg.gov.br', nome:'Ana Lúcia Ferreira', masp:'11234567', papel:'diretor_escolar', perfil:'escola', sre:'Divinópolis', inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', situacao:'ativo', ultimoAcesso:'03/09/2026 07:52', comSenha:true},
+    {email:'diretora.horizonte@hotmail.com', nome:'Marta Ribeiro do Horizonte', masp:'9871234', papel:'diretor_escolar', perfil:'escola', sre:'Divinópolis', inep:'31123456', escola:'Escola Estadual Horizonte do Saber', situacao:'ativo', ultimoAcesso:'', comSenha:false},
+    {email:'diretor.boaesperanca@gmail.com', nome:'Sebastião Campos', masp:'7745120', papel:'diretor_escolar', perfil:'escola', sre:'Divinópolis', inep:'31123458', escola:'Escola Estadual do Campo Boa Esperança', situacao:'ativo', ultimoAcesso:'05/09/2026 08:30', comSenha:true},
+    {email:'colegiado.docente@educacao.mg.gov.br', nome:'Rita Alves — representante docente', papel:'colegiado', segmento:'Docente', perfil:'escola', sre:'Divinópolis', inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', situacao:'ativo', ultimoAcesso:'', comSenha:true},
+    {email:'colegiado.estudante@educacao.mg.gov.br', nome:'Pedro Henrique — representante estudante', papel:'colegiado', segmento:'Estudante', perfil:'escola', sre:'Divinópolis', inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', situacao:'ativo', ultimoAcesso:'', comSenha:false}
+  ];
+
+  /* Os PPPs da base. "assinadas/totalAssin/ata" descrevem o que
+     a folha de assinaturas deve conter — a semeadura monta a folha de
+     verdade a partir daí, e daí em diante quem conta é o servidor. */
+  const SEMENTE_REGISTROS = [
+    /* Os três primeiros são da escola da demonstração: duas versões encerradas e a revisão em curso. */
+    {protocolo:'PPP-2026-0031-R4KP', versao:3, escola:'Escola Estadual Professor João Ribeiro', inep:'31100001', municipio:'Divinópolis', sre:'Divinópolis', status:'Em andamento', pct:41, assinadas:0, totalAssin:0, ata:false, atualizadoEm:'03/09/2026 07:52', origem:'PPP-2024-0018-A2ND'},
+    {protocolo:'PPP-2024-0018-A2ND', versao:2, escola:'Escola Estadual Professor João Ribeiro', inep:'31100001', municipio:'Divinópolis', sre:'Divinópolis', status:'Em assinatura', pct:100, assinadas:9, totalAssin:11, ata:true, atualizadoEm:'14/03/2024 11:20'},
+    {protocolo:'PPP-2022-0007-Z8QH', versao:1, escola:'Escola Estadual Professor João Ribeiro', inep:'31100001', municipio:'Divinópolis', sre:'Divinópolis', status:'Homologado', pct:100, assinadas:9, totalAssin:9, ata:true, homolData:'08/04/2022 15:10', homolPor:'Cristina Diretora Educacional · Diretor Educacional', homolEm:'20/04/2022', atualizadoEm:'20/04/2022 10:00'},
+    /* v7.4 (P3): um PPP ÓRFÃO — criado antes do cadastro da diretora; o responsável não é nenhum diretor da escola. */
+    {protocolo:'PPP-2026-0001-K3Q9', versao:1, escola:'Escola Estadual Horizonte do Saber', inep:'31123456', municipio:'Divinópolis', sre:'Divinópolis', status:'Em andamento', pct:62, assinadas:0, totalAssin:0, ata:false, atualizadoEm:'02/09/2026 15:31', email:'secretaria.horizonte@gmail.com'},
+    {protocolo:'PPP-2026-0002-B7RT', versao:1, escola:'Escola Estadual Padre João Ribeiro', inep:'31123457', municipio:'Divinópolis', sre:'Divinópolis', status:'Em assinatura', pct:100, assinadas:3, totalAssin:8, ata:true, atualizadoEm:'01/09/2026 09:12'},
+    {protocolo:'PPP-2026-0003-M2XL', versao:2, escola:'Escola Estadual do Campo Boa Esperança', inep:'31123458', municipio:'Santo Antônio do Monte', sre:'Divinópolis', status:'Assinado', pct:100, assinadas:9, totalAssin:9, ata:false, atualizadoEm:'28/08/2026 16:45'},
+    {protocolo:'PPP-2026-0004-Z8KD', versao:1, escola:'Escola Estadual Anísio Teixeira', inep:'31123459', municipio:'Nova Serrana', sre:'Divinópolis', status:'Concluído', pct:100, assinadas:11, totalAssin:11, ata:true, atualizadoEm:'30/08/2026 11:05'},
+    {protocolo:'PPP-2026-0005-Q4WP', versao:1, escola:'Escola Estadual Maria da Conceição', inep:'31123460', municipio:'Itaúna', sre:'Divinópolis', status:'Homologado', pct:100, assinadas:7, totalAssin:7, ata:true, homolData:'26/08/2026 14:00', homolPor:'Cristina Diretora Educacional · Diretor Educacional', homolEm:'02/09/2026', atualizadoEm:'02/09/2026 09:30'},
+    {protocolo:'PPP-2024-0018-R7GT', versao:1, escola:'Escola Estadual Vale do Rio', inep:'31123461', municipio:'Carmo do Cajuru', sre:'Divinópolis', status:'Enviado para homologação', pct:100, assinadas:9, totalAssin:9, ata:true, homolData:'12/03/2024 09:40', atualizadoEm:'12/03/2024 09:40'},
+    {protocolo:'PPP-2026-0006-H9NF', versao:1, escola:'Escola Estadual Carlos Drummond', inep:'31200011', municipio:'Belo Horizonte', sre:'Metropolitana A', status:'Em andamento', pct:35, assinadas:0, totalAssin:0, ata:false, atualizadoEm:'29/08/2026 10:22'},
+    {protocolo:'PPP-2026-0007-T5VC', versao:1, escola:'Escola Estadual Serra Verde', inep:'31200012', municipio:'Belo Horizonte', sre:'Metropolitana A', status:'Enviado para homologação', pct:100, assinadas:10, totalAssin:10, ata:true, homolData:'25/08/2026 08:15', atualizadoEm:'25/08/2026 08:15'},
+    {protocolo:'PPP-2026-0008-J6DR', versao:1, escola:'Escola Estadual do Triângulo', inep:'31300021', municipio:'Uberlândia', sre:'Uberlândia', status:'Em assinatura', pct:100, assinadas:5, totalAssin:12, ata:true, atualizadoEm:'27/08/2026 14:38'},
+    {protocolo:'PPP-2026-0009-P1LS', versao:1, escola:'Escola Estadual Quilombola Vila Nova', inep:'31400031', municipio:'Montes Claros', sre:'Montes Claros', status:'Em andamento', pct:48, assinadas:0, totalAssin:0, ata:false, atualizadoEm:'31/08/2026 17:02'},
+    {protocolo:'PPP-2026-0010-C3YB', versao:1, escola:'Escola Estadual Norte de Minas', inep:'31400032', municipio:'Montes Claros', sre:'Montes Claros', status:'Concluído', pct:100, assinadas:8, totalAssin:8, ata:true, atualizadoEm:'26/08/2026 13:20'},
+    /* v7.3 (T-26): um PPP esperando a Diretoria Educacional, para que validar e devolver apareçam ao entrar */
+    {protocolo:'PPP-2026-0011-V4LD', versao:1, escola:'Escola Estadual São Sebastião do Oeste', inep:'31123462', municipio:'São Sebastião do Oeste', sre:'Divinópolis', status:'Em validação', pct:97, assinadas:0, totalAssin:0, ata:false, enviadoValidacaoEm:'11/09/2026 09:05', atualizadoEm:'11/09/2026 09:05'}
+  ];
+
+  /* Períodos do histórico de gestores e dos acessos institucionais. */
+  const SEMENTE_GESTORES = [
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Sebastião Prates de Oliveira', masp:'8871200', email:'sebastiao.prates@educacao.mg.gov.br', inicio:'12/02/2019 09:10', fim:'28/01/2022 17:40', registradoPor:'Equipe DIRE Divinópolis', motivo:'aposentadoria', perfil:'escola', sre:'Divinópolis'},
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Rita de Cássia Moura', masp:'9930411', email:'rita.moura@educacao.mg.gov.br', inicio:'28/01/2022 17:45', fim:'15/01/2024 10:05', registradoPor:'Equipe DIRE Divinópolis', motivo:'substituída por direcao.31100001@educacao.mg.gov.br', perfil:'escola', sre:'Divinópolis'},
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Ana Lúcia Ferreira', masp:'11234567', email:'direcao.31100001@educacao.mg.gov.br', inicio:'15/01/2024 10:05', fim:'', registradoPor:'Equipe DIRE Divinópolis', motivo:'', perfil:'escola', sre:'Divinópolis'},
+    {inep:'', escola:'', nome:'Cristina Diretora Educacional', masp:'', email:'dire.divinopolis@educacao.mg.gov.br', inicio:'04/03/2024 08:30', fim:'', registradoPor:'Órgão Central', motivo:'', perfil:'regional', sre:'Divinópolis'},
+    {inep:'', escola:'', nome:'Cláudia Regina Nogueira', masp:'', email:'claudia.nogueira@educacao.mg.gov.br', inicio:'11/05/2023 14:00', fim:'04/03/2024 08:25', registradoPor:'Órgão Central', motivo:'acesso inativado por Órgão Central', perfil:'regional', sre:'Divinópolis'},
+    {inep:'', escola:'', nome:'Superintendente Metropolitana A', masp:'', email:'super.metropolitana.a@educacao.mg.gov.br', inicio:'04/03/2024 08:40', fim:'', registradoPor:'Órgão Central', motivo:'', perfil:'regional', sre:'Metropolitana A'},
+    /* v8.12 — os membros do Colegiado Escolar também têm período. Quem os
+       cadastrou é a direção da escola, e é isso que o histórico mostra. Um
+       deles já saiu: é o caso que interessa ver numa auditoria de acesso. */
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Rita Alves — representante docente', masp:'', email:'colegiado.docente@educacao.mg.gov.br', inicio:'02/02/2024 09:00', fim:'', registradoPor:'Ana Lúcia Ferreira', motivo:'', perfil:'colegiado', sre:'Divinópolis', encerradoPor:'', observacao:'Docente'},
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Pedro Henrique — representante estudante', masp:'', email:'colegiado.estudante@educacao.mg.gov.br', inicio:'02/02/2024 09:05', fim:'', registradoPor:'Ana Lúcia Ferreira', motivo:'', perfil:'colegiado', sre:'Divinópolis', encerradoPor:'', observacao:'Estudante · estudante do 9º ano, turma A'},
+    {inep:'31100001', escola:'Escola Estadual Professor João Ribeiro', nome:'Marcelo Duarte — representante das famílias', masp:'', email:'marcelo.duarte@exemplo.mg', inicio:'02/02/2024 09:10', fim:'19/12/2025 16:30', registradoPor:'Ana Lúcia Ferreira', motivo:'mandato encerrado — nova eleição do Colegiado', perfil:'colegiado', sre:'Divinópolis', encerradoPor:'Ana Lúcia Ferreira', observacao:'Pai, mãe ou responsável · pai da estudante Beatriz, 8º ano B'}
+  ];
+
+  const SENHA_CURADORIA = 'demonstracao-2026';
+  const SENHA_PADRAO = 'demonstracao-2026';
+  let S = null, BACKEND = null, pronto = false;
+
+  /* ---------- semeadura ---------- */
+  const emElab = (st) => ['Em andamento', 'Em validação', 'Validado'].indexOf(st) >= 0;
+  const diretorDe = (inep) => SEMENTE_ACESSOS.filter((a) => a.papel === 'diretor_escolar' && a.inep === inep)[0] || null;
+  const colegiadoDe = (inep) => SEMENTE_ACESSOS.filter((a) => a.papel === 'colegiado' && a.inep === inep);
+
+  /** A folha de assinaturas de um registro, com as contagens pedidas pela semente.
+      Os membros de colegiado CADASTRADOS entram por último, ainda sem assinar:
+      é assim que a demonstração tem o que assinar quando se entra como colegiado. */
+  function folhaDe(r) {
+    const total = r.totalAssin || 0;
+    if (!total) return [];
+    const dir = diretorDe(r.inep);
+    const reais = colegiadoDe(r.inep);
+    const membros = [];
+    membros.push({ papel: 'Direção Escolar', segmento: 'Direção Escolar', nome: (dir && dir.nome) || r.escola,
+                   masp: (dir && dir.masp) || '', email: (dir && dir.email) || ('direcao.' + r.inep + '@educacao.mg.gov.br') });
+    const segmentos = ['Docente', 'Estudante', 'Pai, mãe ou responsável', 'Servidor administrativo', 'Comunidade'];
+    /* v10.1: o MASP é do SERVIDOR. Docente e servidor administrativo têm
+       matrícula; estudante, família e comunidade não — e é assim que a folha
+       do PDF fica, com o número por extenso de quem o tem. Antes a
+       demonstração não semeava matrícula nenhuma no Colegiado, e a folha de
+       exemplo não mostrava o que a regra faz. */
+    const servidor = function (seg) { return seg === 'Docente' || seg === 'Servidor administrativo'; };
+    for (let i = membros.length; i < total - reais.length; i++) {
+      const seg = segmentos[i % segmentos.length];
+      membros.push({ papel: 'Colegiado Escolar', segmento: seg,
+                     nome: 'Representante ' + i + ' do Colegiado',
+                     masp: servidor(seg) ? String(1180000 + i * 137) : '',
+                     email: 'colegiado' + i + '.' + r.inep + '@exemplo.mg' });
+    }
+    reais.forEach(function (c) {
+      membros.push({ papel: 'Colegiado Escolar', segmento: c.segmento || 'Colegiado', nome: c.nome,
+                     masp: c.masp || (servidor(c.segmento) ? '9930418' : ''), email: c.email });
+    });
+    /* v8.1 — sem token de convite e sem ressalva: quem está na folha é quem
+       a direção marcou como presente na reunião, e assina na própria sessão */
+    const assinadas = Math.min(r.assinadas || 0, membros.length);
+    membros.forEach(function (m, i) { m.assinadoEm = i < assinadas ? r.atualizadoEm : ''; });
+    return membros;
+  }
+
+  /** v8.11 — o código de autenticidade da demonstração.
+
+      No sistema de verdade o código são os doze primeiros dígitos do SHA-256
+      do conteúdo congelado. Aqui não há SHA-256 disponível na semeadura, mas
+      o FORMATO precisa ser o mesmo — doze hexadecimais em três grupos —,
+      senão a porta pública da demonstração recusaria os próprios documentos
+      que ela mostra. O valor é derivado do protocolo e da versão, de modo
+      que o mesmo registro tenha sempre o mesmo código. */
+  function codigoDemo(r) {
+    const semente = String(r.protocolo || '') + '|' + String(r.versao || '') + '|' + String(r.inep || '');
+    let a = 0x811c9dc5, b = 0x01000193;
+    for (let i = 0; i < semente.length; i++) {
+      a = (a ^ semente.charCodeAt(i)) >>> 0;
+      a = (a * 16777619) >>> 0;
+      b = (b + a + i * 2654435761) >>> 0;
+    }
+    const hex = (('00000000' + a.toString(16)).slice(-8) + ('00000000' + b.toString(16)).slice(-8))
+      .toUpperCase().substring(0, 12);
+    return (hex.match(/.{1,4}/g) || []).join('-');
+  }
+
+  /** Um arquivo no Drive simulado, para que o PDF oficial possa ser gerado de verdade.
+
+      v8.12: este é apenas o esqueleto da semeadura. Logo depois de a página
+      carregar, a demonstração substitui o conteúdo pelo DOCUMENTO INTEIRO,
+      montado pela mesma função que monta o PPP de verdade — é o que se lê ao
+      abrir um PPP concluído e ao conferir um código na porta pública, e um
+      resumo ali fazia a tela parecer um documento mal formatado e vazio. */
+  function arquivoFonte(r) {
+    const html = '<div class="capa"><div class="brasao"><!--BRASAO--></div>' +
+      '<div class="doc-org"><div class="l1">Secretaria de Estado de Educação de Minas Gerais</div>' +
+      '<div class="l2">Superintendência Regional de Ensino de ' + (r.sre || '') + '</div></div>' +
+      '<hr class="doc-rule"><div class="doc-title"><h1>Projeto Político-Pedagógico</h1>' +
+      '<div class="school">' + r.escola + '</div>' +
+      '<div class="meta">' + (r.municipio || '') + ' — Minas Gerais</div></div></div>' +
+      '<h3 class="doc-h">Identificação da escola</h3>' +
+      '<p class="ident"><b>Escola Estadual:</b> ' + r.escola + '</p>' +
+      '<p class="ident"><b>Protocolo:</b> ' + r.protocolo + '</p>' +
+      '<div class="quebra"></div><h3 class="doc-h">1. Histórico da escola</h3>' +
+      '<p>Documento congelado na conclusão, em ' + (r.concluidoEm || '') + '.</p>';
+    return BACKEND.obterPastaPdf_().createFile(S.g.Utilities.newBlob(html, S.g.MimeType.HTML, r.protocolo + '_FONTE.html')).getId();
+  }
+  function arquivoAta(r) {
+    return BACKEND.obterPastaPdf_().createFile(S.g.Utilities.newBlob('ata', S.g.MimeType.PDF, r.protocolo + '_ATA_APROVACAO.pdf')).getId();
+  }
+
+  function linhaDe(cols, obj, chave) {
+    return cols.map(function (c) {
+      const v = obj[chave ? c[chave] : c];
+      if (Array.isArray(v)) return v.join('; ');
+      return (v === undefined || v === null) ? '' : v;
+    });
+  }
+
+  function semear() {
+    /* escolas */
+    const abaE = BACKEND.abaEscolas_();
+    abaE.getRange(2, 1, SEMENTE_ESCOLAS.length, BACKEND.ESCOLA_COLS.length).setValues(
+      SEMENTE_ESCOLAS.map(function (e) { return [e.inep, e.escola, e.municipio, e.sre, e.situacao || 'ativa', e.censo || '']; }));
+
+    /* acessos */
+    const abaA = BACKEND.abaAcessos_();
+    abaA.getRange(2, 1, SEMENTE_ACESSOS.length, BACKEND.ACESSO_COLS.length).setValues(
+      SEMENTE_ACESSOS.map(function (a) {
+        const sal = a.comSenha ? 'sal-' + a.email : '';
+        return [a.email, a.nome, a.perfil, a.perfil === 'central' ? '' : a.sre,
+                a.comSenha ? BACKEND.hashSenhaV2_(SENHA_PADRAO, sal) : '', sal,
+                a.situacao || 'ativo', '10/01/2026 09:00', a.ultimoAcesso || '',
+                a.perfil === 'escola' ? a.inep : '', a.perfil === 'escola' ? a.escola : '',
+                a.perfil === 'escola' ? (a.masp || '') : '', a.papel,
+                a.comSenha ? '' : 'convite-' + a.email, a.comSenha ? '' : '31/12/2026 23:59',
+                a.segmento || '', a.comSenha ? '2' : ''];
+      }));
+
+    /* histórico de gestores e de acessos institucionais */
+    const abaG = BACKEND.abaGestores_();
+    abaG.getRange(2, 1, SEMENTE_GESTORES.length, BACKEND.GESTOR_COLS.length).setValues(
+      SEMENTE_GESTORES.map(function (g) {
+        return [g.inep, g.escola, g.nome, g.masp, g.email, g.inicio, g.fim, g.registradoPor, g.motivo, g.perfil, g.sre,
+                g.encerradoPor || '', g.observacao || ''];
+      }));
+
+    /* registros */
+    const abaR = BACKEND.abaRegistros_();
+    const linhas = SEMENTE_REGISTROS.map(function (r) {
+      const encerrado = !emElab(r.status);
+      const dir = diretorDe(r.inep);
+      const obj = Object.assign({}, r, {
+        criadoEm: r.criadoEm || r.atualizadoEm,
+        concluidoEm: encerrado ? (r.concluidoEm || r.atualizadoEm) : '',
+        assinaturas: JSON.stringify(folhaDe(r)),
+        hash: encerrado ? codigoDemo(r) : '',
+        /* v8.11 — o PPP concluído leva consigo os textos da folha como eles
+           eram naquele dia: é o que faz a demonstração mostrar, de verdade,
+           que reescrever o texto no Órgão Central não altera documento já
+           assinado. */
+        textosFolha: encerrado ? BACKEND.congelarTextosFolha_() : '',
+        fonteId: encerrado ? arquivoFonte(r) : '',
+        ataId: r.ata ? arquivoAta(r) : '', ataUrl: r.ata ? 'https://drive/demo-ata' : '',
+        ataNome: r.ata ? 'ata-aprovacao.pdf' : '', ataData: r.ata ? '20/08/2026' : '',
+        ataIdent: r.ata ? 'Ata da reunião do Colegiado Escolar' : '',
+        homolDestino: r.homolData ? 'sre.divinopolis@educacao.mg.gov.br' : '',
+        /* v8.1 — quem acompanhou o documento pela SRE: é a caixa "acompanhado
+           por" ao fim do PPP. Todo documento que passou da validação tem uma. */
+        validadoPor: (encerrado || r.status === 'Validado')
+          ? (r.sre === 'Divinópolis' ? 'Cristina Diretora Educacional · Diretor Educacional'
+                                     : 'Equipe da Diretoria Educacional · Equipe da Diretoria Educacional') : '',
+        validadoEm: (encerrado || r.status === 'Validado') ? (r.criadoEm || r.atualizadoEm) : '',
+        email: r.email !== undefined ? r.email : ((dir && dir.email) || ''),
+        direcao: (dir && dir.nome) || '', especialista: '', tela: 0
+      });
+      return BACKEND.CAMPOS.map(function (c) {
+        const v = obj[c.key];
+        return (v === undefined || v === null) ? '' : v;
+      });
+    });
+    abaR.getRange(2, 1, linhas.length, BACKEND.CAMPOS.length).setValues(linhas);
+
+    /* a senha institucional do Órgão Central, para o modo de edição de textos */
+    /* v8.13 (E01): a rotina é privada agora; a semeadura chama o BACKEND
+       direto, e não pelo despachante — é semeadura, não uso da tela. */
+    BACKEND.definirSenhaCuradoria_(SENHA_CURADORIA);
+  }
+
+  /* ---------- entrada: escolher o perfil é dizer que conta abriu o app ---------- */
+  function emailDoPapel(papel) {
+    const daEscola = SEMENTE_ACESSOS.filter(function (a) { return a.papel === papel && a.inep === ESCOLA_DEMO.inep; })[0];
+    const daSre = SEMENTE_ACESSOS.filter(function (a) { return a.papel === papel && a.sre === ESCOLA_DEMO.sre; })[0];
+    const qualquer = SEMENTE_ACESSOS.filter(function (a) { return a.papel === papel; })[0];
+    return ((daEscola || daSre || qualquer) || {}).email || '';
+  }
+  function entrar(a) {
+    /* Que conta abriu o app, na demonstração:
+         · quem digita e-mail e senha não é identificado pela conta — é o
+           caminho de quem não tem conta institucional, e o servidor confere
+           a senha, como na implantação;
+         · entrar pelo cartão é dizer que foi aquela conta que abriu o app;
+         · nas portas, quem diz a conta é o perfil escolhido. */
+    const porSenha = !!(a.email && a.senha);
+    const doCartao = (typeof APP !== 'undefined' && APP.acesso && APP.acesso.email) || '';
+    const papel = a.papelDemo ||
+      (a.porta === 'central' ? 'central' : a.porta === 'colegiado' ? 'colegiado' : a.porta === 'escola' ? 'diretor_escolar' : '');
+    if (porSenha) S.estado.identidade = '';
+    else if (doCartao) S.estado.identidade = doCartao;
+    else if (papel) S.estado.identidade = emailDoPapel(papel);
+    return BACKEND.entrarInstitucional({ porta: a.porta || '', email: a.email || '', senha: a.senha || '',
+                                         nome: a.nome || '', masp: a.masp || '' });
+  }
+
+  /* ---------- despacho ---------- */
+  function despachar(fn, args) {
+    const a = args || {};
+    if (fn === 'entrarInstitucional') return entrar(a);
+    /* v8.13 (E04): a linha especial de `curadoriaEntrar` saiu junto com a
+       função. A demonstração já entra pela porta `central` de
+       entrarInstitucional, com a senha conhecida — o caminho não muda. */
+    if (fn === 'sair') { S.estado.identidade = ''; return BACKEND.sair(a); }
+    /* v8.13 (E01) — A DEMONSTRAÇÃO RECUSA O QUE A IMPLANTAÇÃO RECUSA. Na
+       implantação a tela fala com `api({fn, args})`, que confere o nome
+       contra API_TELA; aqui o caminho é direto, e sem esta conferência a
+       demonstração deixaria passar exatamente o que o servidor de verdade
+       barra — quebrando a promessa do montar.js ("ela executa o mesmo
+       servidor que a implantação"). As linhas especiais acima continuam
+       antes, porque são semeadura da demonstração, não superfície pública. */
+    if (!BACKEND.API_TELA || !Object.prototype.hasOwnProperty.call(BACKEND.API_TELA, fn)) {
+      throw new Error('Ação desconhecida.');
+    }
+    if (typeof BACKEND[fn] !== 'function') throw new Error('Função inexistente no servidor: ' + fn + '.');
+    return BACKEND[fn](args === null || args === undefined ? {} : args);
+  }
+
+  /** A latência simulada. As baterias a reduzem por window.demoLatencia. */
+  function latencia() { return (typeof window.demoLatencia === 'number') ? window.demoLatencia : 600; }
+
+  /* ---------- leitura do estado, para as baterias e para a tela ---------- */
+  function linhasDaAba(aba, cols) {
+    const n = aba.getLastRow();
+    if (n < 2) return [];
+    return aba.getRange(2, 1, n - 1, cols.length).getDisplayValues().map(function (r, i) {
+      const o = { _linha: i + 2 };
+      cols.forEach(function (c, k) { o[c] = r[k]; });
+      return o;
+    });
+  }
+
+  window.DEMO = {
+    /** Cria os serviços, carrega o Code.gs real e semeia as abas. */
+    iniciar: function () {
+      if (pronto) return BACKEND.conteudoPublicado();
+      S = SimuladorServicos.criarServicos({ identidade: '', cota: 1500,
+        urlApp: 'https://script.google.com/macros/s/DEMONSTRACAO/exec' });
+      BACKEND = window.__CODE_GS__.apply(null, SimuladorServicos.ORDEM.map(function (n) { return S.g[n]; }));
+      semear();
+      pronto = true;
+      return BACKEND.conteudoPublicado();
+    },
+    /** O caminho que servidor() usa quando APP.local. */
+    chamar: function (fn, args, ok, falha) {
+      setTimeout(function () {
+        let r;
+        try { r = despachar(fn, args); }
+        catch (e) { falha(e && e.message ? e : new Error(String(e))); return; }
+        ok(r);
+      }, latencia());
+    },
+    escola: ESCOLA_DEMO,
+    /** v8.12: regrava o congelado de um registro com o documento inteiro. */
+    gravarFonte: function (fonteId, html) {
+      try { S.g.DriveApp.getFileById(fonteId).setContent(html); return true; }
+      catch (e) { return false; }
+    },
+    servicos: function () { return S; },
+    backend: function () { return BACKEND; },
+    registros: function () {
+      const aba = BACKEND.abaRegistros_(), n = aba.getLastRow(), out = [];
+      for (let l = 2; l <= n; l++) out.push(BACKEND.lerLinha_(aba, l));
+      return out.filter(function (r) { return String(r.protocolo || '').trim(); });
+    },
+    registro: function (protocolo) {
+      return window.DEMO.registros().filter(function (r) { return r.protocolo === protocolo; })[0] || null;
+    },
+    gravar: function (protocolo, chave, valor) {
+      const aba = BACKEND.abaRegistros_();
+      BACKEND.gravarCampo_(aba, BACKEND.linhaDoProtocolo_(aba, protocolo), chave, valor);
+    },
+    acessos: function () { BACKEND.invalidarAcessos_(); return BACKEND.acessosTodos_(); },
+    gestores: function () { BACKEND.invalidarGestores_(); return BACKEND.gestoresTodos_(); },
+    escolas: function () { return BACKEND.escolasTodas_(); },
+    convite: function (email) { const c = BACKEND.acessoPorEmail_(String(email).toLowerCase()); return c ? c.token : ''; },
+    identidade: function (email) { S.estado.identidade = email || ''; },
+    fila: function () { return linhasDaAba(BACKEND.abaFila_(), ['criadoEm', 'para', 'tipo', 'assunto', 'corpo', 'prioridade', 'situacao', 'tentativas', 'erro', 'enviadoEm']); },
+    ciclo: function () { return linhasDaAba(BACKEND.abaCiclo_(), ['data', 'protocolo', 'ato', 'autor', 'papel', 'detalhe']); },
+    emails: function () { return S.estado.emails; },
+    /* Instantâneo das abas, para a bateria voltar ao estado anterior de um trecho. */
+    instantaneo: function () {
+      return ['Registros', 'Acessos', 'Gestores — histórico', 'Escolas'].map(function (nome) {
+        const a = S.estado.abas[nome];
+        const n = a ? a.getLastRow() : 0, c = a ? a.getLastColumn() : 0;
+        return { nome: nome, vals: (n && c) ? a.getRange(1, 1, n, c).getValues() : [] };
+      });
+    },
+    restaurar: function (snap) {
+      snap.forEach(function (x) {
+        const a = S.estado.abas[x.nome];
+        if (!a) return;
+        a.clear();
+        if (x.vals.length) a.getRange(1, 1, x.vals.length, x.vals[0].length).setValues(x.vals);
+      });
+      BACKEND.invalidarAcessos_(); BACKEND.invalidarGestores_(); BACKEND.invalidarEscolas_();
+    },
+    /* Escreve direto numa célula da aba Acessos — o que nenhuma tela faz, mas
+       a bateria precisa para montar cenários (reativar, expirar, etc.). */
+    situacaoAcesso: function (email, situacao) {
+      const cad = BACKEND.acessoPorEmail_(String(email).toLowerCase());
+      if (!cad) return false;
+      BACKEND.abaAcessos_().getRange(cad.linha, BACKEND.ACESSO_COLS.indexOf('Situação') + 1).setValue(situacao);
+      BACKEND.invalidarAcessos_();
+      return true;
+    },
+    senhaCuradoria: SENHA_CURADORIA,
+    senhaPadrao: SENHA_PADRAO
+  };
+})();
+</script>

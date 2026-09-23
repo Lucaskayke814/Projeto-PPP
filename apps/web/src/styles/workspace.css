@@ -20,6 +20,26 @@ h2[tabindex='-1']:focus-visible { outline: 2px solid var(--azul-medio); outline-
 .switch-wrap input:checked + .sw { background: var(--azul-inst); }
 .switch-wrap input:checked + .sw::after { transform: translateX(16px); }
 
+/* Etapas e modalidades: os cartões preservam o desenho original, mas passam
+   para uma coluna antes que o texto e o controle fiquem comprimidos. */
+.opts {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-items:stretch;
+}
+.opt,
+.opt-wrap,
+.opt-title,
+.opt-ref { min-width:0; }
+.opt { height:100%; }
+.opt-title,
+.opt-ref { overflow-wrap:anywhere; }
+.det-box { min-width:0; }
+
+@media (max-width: 700px) {
+  .opts { grid-template-columns:1fr; }
+  .opt { padding:13px 14px; }
+}
+
 /* A retomada permanece legível em telas pequenas e com zoom elevado. */
 @media (max-width: 520px) {
   .land-retomar.open { align-items: stretch; flex-wrap: wrap; }

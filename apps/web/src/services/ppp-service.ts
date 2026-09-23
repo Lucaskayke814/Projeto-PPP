@@ -1,4 +1,4 @@
-﻿import { PppRepository, type RetrievedPppDraft } from '../repositories/ppp-repository';
+﻿import { PppRepository, type ListedPpp, type RetrievedPppDraft } from '../repositories/ppp-repository';
 import { emptyPppDraft, type PppDraftState } from '../state/ppp-draft';
 
 export class PppService {
@@ -10,7 +10,7 @@ export class PppService {
   }
 
   async save(draft: PppDraftState): Promise<PppDraftState> {
-    if (!draft.versionId || draft.revision === null) throw new Error('Nenhuma versÃ£o de PPP foi iniciada.');
+    if (!draft.versionId || draft.revision === null) throw new Error('Nenhuma versão de PPP foi iniciada.');
     const persisted = await this.repository.save(draft.versionId, draft.revision, draft.answers, draft.screenKey, draft.tasks);
     return { ...draft, revision: persisted.revision };
   }
@@ -39,5 +39,8 @@ export class PppService {
       answers: persisted.answers,
       tasks: persisted.tasks,
     };
+  }
+  async listForPanel(searchTerm = ''): Promise<ListedPpp[]> {
+    return this.repository.listForPanel(searchTerm);
   }
 }

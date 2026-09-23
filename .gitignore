@@ -9,6 +9,7 @@ apps/web/public/referencia/
 apps/web/prototipo.html
 supabase/.temp/
 supabase/.branches/
+tests/artifacts/
 
 # Generated dependencies and reports
 node_modules/

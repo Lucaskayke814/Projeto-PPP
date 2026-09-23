@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de PPP · Secretaria de Estado de Educação de Minas Gerais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<?!= include('Css'); ?>
+<!-- v8.13 (D16): a tipografia do DOCUMENTO vem de um arquivo só, o mesmo
+     que montarHtmlPdf_ emite no PDF. É o que faz a tela medir a folha com
+     as regras com que o papel é impresso. -->
+<!-- v9.1: a fonte do documento vai embutida (DocFonte.html), antes da
+     folha de estilo que a usa — a mesma fonte mede, exibe e imprime. -->
+<?!= include('DocFonte'); ?>
+<?!= include('DocCss'); ?>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Ir para o conteúdo</a>
+<p class="sr-only" id="anuncio" role="status" aria-live="polite"></p>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">PPP</div>
+      <div class="brand-t">
+        <strong>Gerador de Projeto Político-Pedagógico</strong>
+        <span>Percurso formativo · Secretaria de Estado de Educação de Minas Gerais</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="btn-topo" id="btnPainel" hidden>← Tela inicial</button>
+      <div style="text-align:right">
+        <span class="badge-proto" id="badgeProto">Nenhum PPP aberto</span>
+        <span class="badge-user" id="badgeUser"></span>
+      </div>
+    </div>
+  </div>
+</header>
+<!-- v7.4 (P1): identificação vazia é normal (quem não é do domínio entra por e-mail e senha);
+     a tarja só aparece se o servidor não responder ao pedido de contexto. -->
+<div class="acesso-ribbon" id="acessoRibbon" hidden>Não foi possível conferir o controle de acesso com o servidor. Recarregue a página; se persistir, avise a equipe responsável pelo sistema.</div>
+<div class="trava-ribbon" id="travaRibbon" hidden></div>
+<div class="cur-previa-fita" id="previaFita" hidden>Prévia da curadoria — você está vendo os textos ainda não publicados.
+  <button id="btnSairPrevia" style="background:none;border:none;color:var(--alerta-tinta);text-decoration:underline;font:inherit;cursor:pointer">Sair da prévia</button></div>
+<div class="demo-ribbon" id="demoRibbon" hidden>Modo demonstração — sem conexão com o banco de dados e sem conta institucional. Implantado, o acesso é reconhecido pelo e-mail; aqui, a escolha do perfil faz esse papel.</div>
+
+<nav class="trilha" aria-label="Módulos do percurso">
+  <div class="trilha-linha">
+    <div class="trilha-inner" id="trilha"></div>
+    <button class="btn-mapa" id="btnMapa" title="Ver todas as telas e o que falta em cada uma">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 3h12M2 8h12M2 13h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>Mapa do percurso</span>
+    </button>
+  </div>
+  <div class="barra"><span id="barraProg"></span></div>
+</nav>
+
+<main class="wrap" id="conteudo" tabindex="-1">
+  <section class="stage" id="stage">
+    <div class="col-form">
+      <div class="panel form-panel" id="panelFormativo" hidden></div>
+      <div class="panel" id="panelProducao" hidden></div>
+
+      <div id="panelFinal" hidden>
+        <div class="panel" style="margin-bottom:18px">
+          <span class="eyebrow">Módulo 10 · Conclusão</span>
+          <h2 id="uiFinalTitulo">Aprovação, conclusão e assinaturas</h2>
+          <p class="hint" id="uiFinalHint" style="margin-bottom:18px">O PPP deve ser <b>aprovado pelo Colegiado Escolar</b>, amplamente divulgado à comunidade e revisto, no máximo, a cada dois anos — ou sempre que houver alteração legal, novos programas ou demanda da comunidade escolar (Resolução SEE nº [nº a publicar], de 2026, art. 7º, parágrafo único).</p>
+          <div class="grid-fields">
+            <div class="field">
+              <label for="fAssemb">Assembleia Escolar de validação — data</label>
+              <input id="fAssemb" type="date">
+              <span class="sub">Momento em que o documento foi apresentado e validado com a comunidade.</span>
+            </div>
+            <div class="field">
+              <label for="fAnalise">Análise técnica e pedagógica da SRE — data</label>
+              <input id="fAnalise" type="date">
+              <span class="sub">Sem caráter de aprovação; as contribuições devem ter sido incorporadas.</span>
+            </div>
+            <div class="field">
+              <label for="fAprov">Aprovação pelo Colegiado Escolar — data</label>
+              <input id="fAprov" type="date">
+            </div>
+            <div class="field">
+              <label for="fQpres">Membros presentes na reunião de aprovação</label>
+              <input id="fQpres" type="number" min="0" placeholder="Ex.: 7">
+            </div>
+            <div class="field">
+              <label for="fQtot">Total de membros do Colegiado Escolar</label>
+              <input id="fQtot" type="number" min="0" placeholder="Ex.: 12">
+              <span class="sub" id="avisoQuorum"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-encerra anexos" id="cardAnexos" hidden>
+          <h3 id="uiAnexosTitulo">Anexos complementares</h3>
+          <p id="uiAnexosTexto">Documentos, registros e materiais que enriqueçam a composição do PPP e subsidiem a
+             compreensão das práticas desenvolvidas — atas de reuniões da revisão, matriz curricular,
+             registros fotográficos, planos de curso, entre outros.</p>
+          <div id="listaAnexos"></div>
+          <!-- v8.13 (D05): depois da assinatura da direção o documento não
+               recebe mais anexos — o cartão passa a ser só a lista. -->
+          <p class="mini" id="anexosFechado" hidden></p>
+          <div class="arq-zona" id="anexoZona">
+            <input type="file" id="anexoArquivo" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" hidden>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4-4 4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+              <button class="btn btn-ghost" id="btnEscolherAnexo">Escolher arquivo</button>
+              <p class="arq-nome" id="anexoNome">PDF, imagem, DOCX ou XLSX, até 12 MB.</p>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnEnviarAnexo">Anexar ao documento</button>
+        </div>
+
+        <!-- v8.2: o envio para homologação deixou de ser um ato à parte — a
+             assinatura da direção já encaminha o documento. Este cartão diz
+             para onde foi e o que acontece em seguida. -->
+        <div class="card-encerra homol" id="cardHomol" hidden>
+          <h3 id="uiHomolTitulo">Na Diretoria Educacional, para homologação</h3>
+          <p id="uiHomolTexto">Assinado o termo pela direção, o documento seguiu automaticamente para a equipe
+             da Diretoria Educacional da Superintendência Regional de Ensino, que é quem homologa. Não há
+             mais nada a enviar por fora: quando a homologação for registrada, a escola é avisada e o
+             documento passa a constar como homologado.</p>
+          <p class="mini" id="infoHomol"></p>
+        </div>
+
+        <div class="card-encerra ata-ok" id="cardAtaOk" hidden>
+          <h3>Documento encaminhado para homologação</h3>
+          <p id="txtAtaOk"></p>
+        </div>
+
+        <div class="card-versao" id="cardVersao" hidden>
+          <h4 id="uiVersaoTitulo">Revisão bienal deste Projeto Político-Pedagógico</h4>
+          <p id="txtVersao"></p>
+          <button class="btn btn-primary" id="btnNovaVersao">Iniciar nova versão</button>
+        </div>
+        <div class="final-grid">
+          <div class="check-card">
+            <h4 id="uiChecklistTitulo">Itens obrigatórios do documento</h4>
+            <div id="checklist"></div>
+          </div>
+        </div>
+        <div class="actions-row">
+          <p class="emit-note">A prévia não altera o documento nem inicia o processo de assinatura.</p>
+          <button class="btn btn-ghost" id="btnPrevia">
+            <span id="btnPreviaTxt">Baixar prévia em PDF</span>
+          </button>
+        </div>
+
+        <!-- v8.14: o percurso termina na VALIDAÇÃO, não na conclusão. Enquanto
+             a Diretoria Educacional não se manifesta, concluir não é opção: o
+             servidor já recusava, e a tela oferecia assim mesmo. -->
+        <div class="card-encerra" id="cardValidacao" hidden>
+          <h3 id="uiValidTitulo">Enviar para a validação da Diretoria Educacional</h3>
+          <p id="uiValidTexto">Terminado o percurso, o Projeto Político-Pedagógico segue para a
+             <b>Diretoria Educacional da Superintendência Regional de Ensino</b>, que o analisa e emite parecer.
+             A partir do envio o documento fica parado até a manifestação: a escola não o altera enquanto isso.</p>
+          <p class="mini" id="uiValidMini">Validado, abre-se o passo seguinte — concluir, congelar o conteúdo e
+             colher as assinaturas. Devolvido, ele volta editável, com o que precisa ser ajustado escrito na tela.</p>
+          <button class="btn btn-primary" id="btnEnviarValidacao">
+            <span id="btnEnviarValidacaoTxt">Enviar para validação</span>
+          </button>
+        </div>
+
+        <div class="card-encerra" id="cardEmValidacao" hidden>
+          <h3 id="uiEmValidTitulo">Em validação pela Diretoria Educacional</h3>
+          <p id="uiEmValidTexto">Este Projeto Político-Pedagógico foi enviado e aguarda o parecer da Diretoria
+             Educacional. Enquanto ela não se manifestar, o conteúdo não pode ser alterado. Validado, a conclusão
+             e as assinaturas ficam liberadas nesta mesma tela.</p>
+          <p class="mini" id="uiEmValidQuando"></p>
+        </div>
+
+        <!-- Conclusão -->
+        <div class="card-encerra" id="cardConcluir">
+          <h3 id="uiConcluirTitulo">Concluir o PPP e abrir as assinaturas</h3>
+          <p id="uiConcluirTexto">A conclusão <b>congela o conteúdo</b> deste Projeto Político-Pedagógico: ele não aceita
+             mais alterações e recebe o código de autenticidade. Em seguida abre-se a coleta de assinaturas:
+             a direção anexa a ata da reunião de aprovação, marca quem compareceu e assina; os membros do
+             Colegiado Escolar marcados assinam ao entrar no sistema, com o próprio acesso.</p>
+          <p class="mini" id="uiConcluirMini">Se algo ainda precisar ser alterado depois disso, o caminho é iniciar uma nova versão:
+             a versão concluída permanece preservada.</p>
+          <button class="btn btn-primary" id="btnConcluir">
+            <span id="btnConcluirTxt">Concluir o PPP</span>
+          </button>
+        </div>
+
+        <!-- Aprovação definitiva: ata do Colegiado -->
+        <div class="card-encerra ata" id="cardAta" hidden>
+          <h3 id="uiAtaTitulo">1. Ata da reunião de aprovação</h3>
+          <p id="uiAtaTexto">Anexe a <b>ata da reunião do Colegiado Escolar</b> que aprovou este Projeto
+             Político-Pedagógico, nos termos do art. 7º da Resolução SEE nº [nº a publicar], de 2026. A ata é a prova
+             documental da deliberação colegiada e vem antes das assinaturas: é a partir dela que
+             a direção marca quem compareceu e assina o documento.</p>
+          <div class="grid-fields">
+            <div class="field"><label for="ataData">Data da reunião de aprovação</label>
+              <input id="ataData" type="date"></div>
+            <div class="field"><label for="ataIdent">Identificação da ata</label>
+              <input id="ataIdent" type="text" placeholder="Ex.: Ata nº 03/2026, fls. 12-14">
+              <span class="sub">Numeração ou folhas do livro de atas, se houver.</span></div>
+          </div>
+          <div class="arq-zona" id="ataZona">
+            <input type="file" id="ataArquivo" accept=".pdf,.jpg,.jpeg,.png" hidden>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4-4 4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+              <button class="btn btn-ghost" id="btnEscolherAta">Escolher arquivo da ata</button>
+              <p class="arq-nome" id="ataNome">Nenhum arquivo selecionado — PDF, JPG ou PNG, até 12 MB.</p>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnRegistrarAta">
+            <span id="btnAtaTxt">Anexar a ata da reunião</span>
+          </button>
+          <p class="mini" id="uiAtaMini">A ata fica arquivada junto ao documento e passa a ser citada na folha
+             de assinaturas. Com ela anexada, a última assinatura encerra o processo. Enquanto ninguém
+             tiver assinado, a ata pode ser substituída; a partir da primeira assinatura, não.</p>
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="card-encerra assinaturas" id="cardAssinaturas" hidden>
+          <h3 id="uiAssinTitulo">Assinaturas do documento</h3>
+          <p class="mini" id="infoCongelado"></p>
+
+          <div class="bloco-assin" id="blocoColegiado">
+            <h4 id="uiPresencaTitulo">2. Quem compareceu à reunião de aprovação</h4>
+            <p class="mini" id="uiPresencaTexto"></p>
+            <div id="listaPresenca"></div>
+            <button class="btn btn-primary" id="btnPresenca">
+              <span id="btnPresencaTxt">Registrar quem compareceu</span>
+            </button>
+          </div>
+
+          <div class="bloco-assin" id="blocoDirecao">
+            <h4>3. Assinatura da direção escolar</h4>
+            <p class="mini" id="dirPendencias" hidden></p>
+            <!-- v8.13 (D03): nome, MASP e e-mail da assinatura saem do CADASTRO,
+                 não do que se digita aqui. Os campos ficam para que a pessoa
+                 confira o que vai ser impresso na folha — e só para isso. -->
+            <div class="grid-fields">
+              <div class="field full"><label for="aDirNome">Nome do diretor</label>
+                <input id="aDirNome" type="text" readonly></div>
+              <div class="field"><label for="aDirMasp">MASP</label>
+                <input id="aDirMasp" type="text" readonly></div>
+              <div class="field"><label for="aDirEmail">E-mail institucional</label>
+                <input id="aDirEmail" type="email" readonly></div>
+            </div>
+            <p class="mini" id="aDirFonte">A assinatura é registrada com o nome, o MASP e o e-mail do seu
+              cadastro de acesso. Havendo erro, a direção da escola corrige o cadastro antes de assinar.</p>
+            <label class="declara">
+              <input type="checkbox" id="aDirAceite">
+              <span class="bx" aria-hidden="true"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>
+              <span class="tx" id="uiDeclDirecao"></span>
+            </label>
+            <button class="btn btn-primary" id="btnAssinarDir">Assinar como Direção Escolar</button>
+          </div>
+
+          <div class="bloco-assin" id="blocoStatus">
+            <h4>Situação das assinaturas</h4>
+            <div id="tabelaAssin"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn btn-ghost" id="btnBack" title="Alt + seta para a esquerda">← Anterior</button>
+        <div class="nav-right">
+          <span class="nav-aviso" id="navAviso" hidden></span>
+          <button class="btn btn-ghost btn-salvar" id="btnSalvar" title="Alt + S">
+            <svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5a1 1 0 0 1 1-1h7l3 3v7a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9Z"/><path d="M5 2.5v4h5v-4M5 13.5v-4h6v4"/></svg>
+            Salvar e continuar depois
+          </button>
+          <button class="btn btn-primary" id="btnNext" title="Alt + seta para a direita">Avançar →</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="col-doc" id="docAside" aria-label="Documento em construção">
+      <div class="doc-barra">
+        <div class="doc-barra-l">
+          <span class="eyebrow">Documento em construção</span>
+          <span class="doc-count" id="miniCount"></span>
+        </div>
+        <div class="doc-barra-r">
+          <div class="zoom" role="group" aria-label="Tamanho do texto do documento">
+            <button id="zoomMenos" title="Diminuir o texto" aria-label="Diminuir o texto">−</button>
+            <span id="zoomVal">100%</span>
+            <button id="zoomMais" title="Aumentar o texto" aria-label="Aumentar o texto">+</button>
+          </div>
+          <button class="doc-exp" id="btnExpandir" title="Ver o documento em tela cheia">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 2H2v4M10 14h4v-4M14 6V2h-4M2 10v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Tela cheia
+          </button>
+        </div>
+      </div>
+      <div class="docwrap docwrap--mini" id="docScroll"><div class="paper"><div class="doc" id="docMini"></div></div></div>
+    </aside>
+  </section>
+</main>
+
+<section class="wrap" id="painelInst" hidden>
+  <div class="pi-cab">
+    <div>
+      <span class="eyebrow" id="piEyebrow">Painel institucional</span>
+      <h2 id="piTitulo">Documentos da rede</h2>
+      <p class="hint" id="piSub"></p>
+    </div>
+    <div class="pi-acoes">
+      <button class="btn btn-primary" id="piNovo" hidden>Criar novo PPP</button>
+      <button class="btn btn-ghost" id="piEditar" hidden><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 .8-3.2 7.5-7.5a1.2 1.2 0 0 1 1.7 0l.7.7a1.2 1.2 0 0 1 0 1.7l-7.5 7.5L3 13Z"/><path d="m9.8 3.8 2.4 2.4"/></svg>Editar os textos do sistema</button>
+      <button class="btn btn-link" id="piExportar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8m0 0 3-3m-3 3-3-3"/><path d="M2.5 11v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V11"/></svg>Baixar planilha</button>
+      <button class="btn btn-link" id="piAtualizar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8A5 5 0 1 1 11.6 4.5"/><path d="M13 2.6v3.2H9.8"/></svg>Atualizar</button>
+      <button class="btn btn-link" id="piSair"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 2.5h-3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/><path d="m10 5 3 3-3 3M13 8H6.5"/></svg>Sair</button>
+    </div>
+  </div>
+  <div class="pi-abas" id="piAbas" hidden>
+    <button data-aba="docs" class="on">Documentos</button>
+    <button data-aba="cobertura" id="piAbaCobertura" hidden>Cobertura</button>
+    <button data-aba="acessos" id="piAbaAcessos">Acessos das escolas</button>
+    <button data-aba="escolas" id="piAbaEscolas">Escolas da rede</button>
+    <button data-aba="equipe" id="piAbaEquipe" hidden>Minha equipe</button>
+    <button data-aba="contas" id="piAbaContas" hidden>Contas a regularizar</button>
+    <button data-aba="inst" id="piAbaInst" hidden>Acesso do superintendente</button>
+    <button data-aba="colegiado" id="piAbaColegiado" hidden>Colegiado Escolar</button>
+    <button data-aba="assinaturas" id="piAbaAssinaturas" hidden>Minhas assinaturas</button>
+    <!-- v8.12: o histórico de associações, em todos os níveis -->
+    <button data-aba="historico" id="piAbaHistorico" hidden>Histórico de acessos</button>
+  </div>
+  <div id="piDocs">
+    <div class="pi-resumo" id="piResumo"></div>
+    <div class="pi-filtros">
+      <input id="piBusca" type="search" placeholder="Escola, município, protocolo ou código da escola" aria-label="Buscar">
+      <select id="piSre" aria-label="Superintendência Regional de Ensino"></select>
+      <select id="piStatus" aria-label="Situação"></select>
+    </div>
+    <!-- v8.13 (E11): a regra da busca fica escrita ao lado do campo — quem
+         digita uma letra e não vê a lista mudar precisa saber por quê. -->
+    <p class="hint" id="piBuscaDica" hidden>Digite três ou mais caracteres. Apague para ver o resumo.</p>
+    <div class="pi-tabela"><div class="pi-scroll" id="piTabela"></div></div>
+  </div>
+  <div id="piCobertura" hidden></div>
+  <div id="piAcessos" hidden></div>
+  <div id="piEscolas" hidden></div>
+  <div id="piEquipe" hidden></div>
+  <div id="piContas" hidden></div>
+  <div id="piInst" hidden></div>
+  <div id="piColegiado" hidden></div>
+  <div id="piAssinaturas" hidden></div>
+  <div id="piHistorico" hidden></div>
+</section>
+
+<div class="barra-edicao" id="barraEdicao" hidden>
+  <span class="be-tag">Edição de textos</span>
+  <span id="beInfo">Clique no texto com contorno tracejado para alterá-lo.</span>
+  <div class="be-acoes">
+    <button class="cur-btn" id="beLista"><span class="lg">Lista completa</span><span class="sm">Lista</span></button>
+    <button class="cur-btn" id="bePrevia"><span class="lg">Ver como a escola vê</span><span class="sm">Prévia</span></button>
+    <button class="cur-btn" id="beDescartar" title="Descarta apenas as alterações que você gravou"><span class="lg">Descartar as minhas</span><span class="sm">Descartar</span></button>
+    <button class="cur-btn forte" id="bePublicar"><span class="lg">Publicar</span><span class="sm">Publicar</span></button>
+    <button class="cur-btn" id="beSair"><span class="lg">Sair</span><span class="sm">Sair</span></button>
+  </div>
+</div>
+
+<div class="overlay" id="landing" hidden>
+  <div class="landing-card" role="dialog" aria-modal="true" aria-labelledby="landTitle">
+    <div class="mark" aria-hidden="true">PPP</div>
+    <h3 id="landTitle">Percurso de elaboração do Projeto Político-Pedagógico</h3>
+    <p class="sub" id="uiLandSub">O preenchimento é contínuo: a escola pode salvar a qualquer momento e retomar depois, exatamente na tela em que parou, usando o número do protocolo.</p>
+    <p class="sub" id="uiLandEntrada" hidden>Quem vem elaborar, acompanhar ou assinar o Projeto Político-Pedagógico
+       entra no sistema com o seu cadastro. Quem recebeu um documento e quer confirmar que ele é autêntico não
+       precisa de cadastro: basta o código do rodapé.</p>
+    <p class="sub lgpd" id="uiLandLgpd">Os dados informados — identificação da escola, nomes, MASP e e-mails dos signatários —
+       são tratados exclusivamente para a elaboração, aprovação e arquivamento do PPP, nos termos da
+       Lei nº 13.709/2018, e ficam acessíveis à escola e à Superintendência Regional de Ensino.</p>
+    <!-- v8.12: a antessala. Duas coisas se pode querer ao abrir o sistema:
+         entrar nele, ou conferir um documento que se recebeu. A conferência
+         não é um perfil nem uma sessão — não passa pelo login. -->
+    <div class="land-passo" id="portaEntrada" hidden>
+      <div class="portas portas-entrada">
+        <button class="porta porta-entrada" id="btnEntrarSistema">
+          <span class="pt">Entrar no sistema</span>
+          <span class="pd">Direção Escolar, Colegiado Escolar, Superintendência Regional de Ensino e Órgão Central</span>
+        </button>
+        <button class="porta porta-entrada" id="btnAutenticarPPP">
+          <span class="pt">Autenticar PPP</span>
+          <span class="pd">Confira um documento pelo código do rodapé — sem cadastro e sem senha</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="land-passo" id="portaIdent" hidden>
+      <div class="ident-card" id="identCard"></div>
+      <button class="btn btn-primary" id="btnEntrarIdent" style="width:100%">Entrar</button>
+      <p class="sub" id="identOutro" hidden style="margin-top:14px;text-align:center">
+        <button type="button" class="btn-link" id="btnOutroAcesso">Entrar por outro caminho</button>
+      </p>
+    </div>
+    <div class="land-passo" id="portaSemCadastro" hidden>
+      <div class="ident-card aviso" id="semCadastroCard"></div>
+      <p class="sub" style="margin-top:4px;text-align:center">
+        <button type="button" class="btn-link" id="btnOutroAcesso2">Entrar por outro caminho</button>
+      </p>
+    </div>
+    <div class="portas" id="portas">
+      <button class="porta" data-porta="escola">
+        <span class="pt">Direção Escolar</span>
+        <span class="pd">Criar, continuar e consultar os PPPs da sua escola</span>
+      </button>
+      <!-- v7.4: o Colegiado Escolar tem entrada própria — não fica mais dentro da porta da direção -->
+      <button class="porta" data-porta="colegiado">
+        <span class="pt">Colegiado Escolar</span>
+        <span class="pd">Ler o PPP da sua escola e assinar dentro do sistema</span>
+      </button>
+      <button class="porta" data-porta="regional" hidden>
+        <span class="pt">Superintendência Regional de Ensino</span>
+        <span class="pd">Acompanhar os PPPs das escolas da regional</span>
+      </button>
+      <button class="porta" data-porta="central" hidden>
+        <span class="pt">Órgão Central</span>
+        <span class="pd">Acompanhar toda a rede e editar os textos do sistema</span>
+      </button>
+    </div>
+    <p class="sub" id="portasVoltar" hidden style="margin-top:12px;text-align:center">
+      <button type="button" class="land-link" data-entrada>← Voltar ao início</button>
+    </p>
+
+    <!-- v8.11: a conferência pública de autenticidade · v8.12: fora do login -->
+    <div class="land-passo" id="portaVerificar" hidden>
+      <button class="land-voltar" data-entrada>← Voltar ao início</button>
+      <h4>Autenticar PPP</h4>
+      <p class="sub">O código de autenticidade tem doze caracteres e está no rodapé de todas as páginas do documento.
+         Digitando-o, o Projeto Político-Pedagógico aparece na íntegra, como a escola o concluiu e assinou.
+         Não é preciso cadastro nem senha.</p>
+      <div class="verif-campo">
+        <input id="verifCodigo" type="text" inputmode="latin" autocomplete="off" spellcheck="false"
+               placeholder="0000-0000-0000" aria-label="Código de autenticidade" maxlength="14">
+        <button class="btn btn-primary" id="btnVerificar">Conferir</button>
+      </div>
+      <div id="verifResultado" aria-live="polite"></div>
+    </div>
+
+    <div class="land-passo" id="portaPapel" hidden>
+      <button class="land-voltar" data-voltar>← Escolher outro acesso</button>
+      <h4 id="papelTitulo">Qual perfil você quer simular?</h4>
+      <p class="sub" id="papelSub">Na demonstração não há conta institucional a identificar: a escolha do perfil faz esse papel. Cada um enxerga e pode coisas diferentes.</p>
+      <div class="portas" id="papelLista"></div>
+    </div>
+
+    <!-- v7.4 (P3): APOSENTADO. "Iniciar novo percurso" e "Retomar por protocolo"
+         eram o caminho sem sessão — o protocolo é público e não é credencial.
+         Os ids ficam (contrato da curadoria e das baterias), ocultos e sem função. -->
+    <div class="land-passo" id="portaEscola" hidden>
+      <button class="land-voltar" data-voltar>← Escolher outro acesso</button>
+      <div class="landing-actions">
+        <button class="btn btn-primary" id="btnNovo" hidden disabled>Iniciar novo percurso</button>
+        <button class="btn btn-ghost" id="btnRetomarToggle" hidden disabled>Retomar por protocolo</button>
+      </div>
+      <div class="land-retomar" id="landRetomar" hidden>
+        <input id="inpProto" type="text" placeholder="PPP-2026-0000-XXXX" autocomplete="off" disabled>
+        <button class="btn btn-primary" id="btnBuscar" hidden disabled>Buscar</button>
+      </div>
+    </div>
+
+    <div class="land-passo" id="portaPrimeiro" hidden>
+      <div class="ident-card" id="paCartao"></div>
+      <div class="field" style="margin-top:14px"><label for="paSenha">Crie a sua senha</label>
+        <input id="paSenha" type="password" autocomplete="new-password">
+        <span class="dica">Ao menos 8 caracteres. É com ela que você entra quando não estiver na conta institucional.</span></div>
+      <div class="field" style="margin-top:10px"><label for="paSenha2">Repita a senha</label>
+        <input id="paSenha2" type="password" autocomplete="new-password"></div>
+      <button class="btn btn-primary" id="btnDefinirSenha" style="width:100%;margin-top:14px">Definir senha e entrar</button>
+      <p class="sub" style="margin-top:12px;text-align:center">Se você usa a conta @educacao.mg.gov.br, também pode entrar direto, sem senha.</p>
+    </div>
+
+    <div class="land-passo" id="portaInst" hidden>
+      <button class="land-voltar" data-voltar>← Escolher outro acesso</button>
+      <h4 id="instTitulo">Acesso institucional</h4>
+      <p class="sub" id="instSub">Informe os dados de acesso fornecidos pelo Órgão Central.</p>
+      <div class="field" id="instCampoEmail">
+        <label for="instEmail">E-mail institucional</label>
+        <input id="instEmail" type="email" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="instSenha">Senha</label>
+        <input id="instSenha" type="password" autocomplete="current-password">
+      </div>
+      <div class="field" id="instCampoNome" hidden>
+        <label for="instNome">Nome do responsável</label>
+        <input id="instNome" type="text" placeholder="Nome completo">
+        <span class="dica">Fica registrado no histórico de alterações.</span>
+      </div>
+      <div class="field" id="instCampoMasp" hidden>
+        <label for="instMasp">MASP</label>
+        <input id="instMasp" type="text" inputmode="numeric" placeholder="Ex.: 1234567-8">
+      </div>
+      <button class="btn btn-primary" id="btnEntrarInst" style="width:100%">Entrar</button>
+      <!-- v7.4 (P3): "Abrir por protocolo" foi aposentado — um PPP começado antes do
+           cadastro é ADOTADO pela regional para a direção em exercício. Ids mantidos, ocultos. -->
+      <p class="sub" id="linkProtocolo" hidden style="margin-top:14px;text-align:center">
+        Tem um PPP começado antes do cadastro de acesso? Peça à sua Superintendência Regional de Ensino que o adote para a direção da escola.
+        <button type="button" class="btn-link" id="btnPorProtocolo" hidden disabled>Abrir por protocolo</button>
+      </p>
+    </div>
+
+    <div class="land-passo" id="portaModo" hidden>
+      <button class="land-voltar" data-voltar>← Escolher outro acesso</button>
+      <h4>Órgão Central</h4>
+      <p class="sub" id="modoSub">Escolha o que deseja fazer agora. É possível alternar depois.</p>
+      <div class="portas">
+        <button class="porta" data-modo="visualizacao">
+          <span class="pt">Visualizar os documentos da rede</span>
+          <span class="pd">Consultar o PPP de qualquer escola, em qualquer regional</span>
+        </button>
+        <button class="porta" data-modo="edicao">
+          <span class="pt">Editar os textos do sistema</span>
+          <span class="pd">Alterar os textos direto nas telas em que eles aparecem</span>
+        </button>
+      </div>
+    </div>
+    <p class="land-erro" id="landErro"></p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="big-ck"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M5 13.5 10.5 19 21 8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h3 id="mTitle">Documento emitido</h3>
+    <p id="mProto"></p>
+    <div class="fname" id="mFile"></div>
+    <p id="mNota"></p>
+    <div class="modal-actions" id="mActions"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovGestor" hidden>
+  <div class="modal mapa" role="dialog" aria-modal="true" aria-labelledby="gsTitulo" style="max-width:580px">
+    <div class="mapa-cab"><h3 id="gsTitulo">Direção da escola</h3>
+      <button type="button" class="btn-link btn-fechar" id="gsFechar" aria-label="Fechar" title="Fechar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <p class="hint" id="gsEscola" style="margin-bottom:6px"></p>
+    <p class="hint" id="gsLocal" style="margin-bottom:18px"></p>
+
+    <!-- 1. quem está no exercício -->
+    <div id="gsPainelAtual" hidden>
+      <button class="gs-atual" id="gsCartaoAtual" type="button">
+        <span class="gs-atual-tag">Diretor em exercício</span>
+        <span class="gs-atual-nome" id="gsAtualNome"></span>
+        <span class="gs-atual-meta" id="gsAtualMeta"></span>
+        <span class="gs-atual-meta" id="gsAtualDesde"></span>
+      </button>
+      <div class="gs-acoes">
+        <button class="btn btn-primary" id="gsNovoDiretor">Associar novo diretor</button>
+        <button class="btn btn-ghost" id="gsCorrigir">Corrigir os dados deste diretor</button>
+        <button class="btn btn-perigo" id="gsAbrirDesativar">Desativar diretor</button>
+      </div>
+      <p class="hint" style="margin-top:12px">Associar um diretor novo encerra automaticamente o período de quem está no exercício, com a data final registrada. <b>Corrigir</b> serve só para acertar um nome ou MASP digitado errado — não troca a pessoa nem abre período novo.</p>
+    </div>
+
+    <!-- 2. formulário -->
+    <div id="gsPainelForm" hidden>
+      <p class="hint" id="gsFormIntro" style="margin-bottom:14px"></p>
+      <div class="gs-form">
+        <div class="field"><label for="gsNome">Nome do diretor</label>
+          <input id="gsNome" type="text" maxlength="120" autocomplete="off"></div>
+        <div class="field"><label for="gsMasp">MASP</label>
+          <input id="gsMasp" type="text" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="apenas números">
+          <span class="dica">Somente números. O sistema descarta qualquer outro caractere.</span></div>
+        <div class="field"><label for="gsEmail">E-mail institucional</label>
+          <input id="gsEmail" type="email" autocomplete="off" placeholder="nome@educacao.mg.gov.br"></div>
+        <div class="field" style="grid-column:1 / -1">
+          <span class="dica" id="gsSenhaDica">O diretor entra com a própria conta institucional, sem senha; quem não a tem define a própria senha pelo link de primeiro acesso, enviado a este e-mail. O e-mail informado é o que dá acesso.</span></div>
+      </div>
+    </div>
+
+    <!-- 3. conferência antes de gravar -->
+    <div id="gsPainelResumo" hidden>
+      <p class="hint" style="margin-bottom:14px">Confira antes de salvar. Depois de gravado, o período entra no histórico permanente da escola.</p>
+      <dl class="gs-resumo" id="gsResumo"></dl>
+      <p class="hint" id="gsResumoAviso" hidden style="margin-top:12px"></p>
+    </div>
+
+    <!-- 4. desativação -->
+    <div id="gsPainelDesativar" hidden>
+      <p class="hint" style="margin-bottom:14px">Desativar encerra o período do diretor com a data de hoje e tira o acesso dele ao sistema. O registro não é apagado: fica no histórico da escola.</p>
+      <dl class="gs-resumo" id="gsDesResumo"></dl>
+      <div class="field" style="margin-top:14px"><label for="gsMotivo">Motivo do encerramento</label>
+        <select id="gsMotivo">
+          <option>Designação encerrada</option>
+          <option>Aposentadoria</option>
+          <option>Remoção ou transferência</option>
+          <option>Exoneração</option>
+          <option value="__outro">Outro — descrever abaixo</option>
+        </select></div>
+      <div class="field" id="gsMotivoOutroBox" hidden style="margin-top:10px">
+        <label for="gsMotivoOutro">Descreva o motivo</label>
+        <input id="gsMotivoOutro" type="text" autocomplete="off" maxlength="120"></div>
+    </div>
+
+    <p class="land-erro" id="gsErro"></p>
+    <details class="gs-hist" id="gsHistBox">
+      <summary id="gsHistResumo">Histórico de diretores desta escola</summary>
+      <div id="gsHist"></div>
+    </details>
+    <div class="gs-pe">
+      <button class="btn btn-ghost" id="gsVoltar" hidden>Voltar</button>
+      <div class="gs-pe-dir">
+        <button class="btn btn-ghost" id="gsCancelar">Fechar</button>
+        <button class="btn btn-primary" id="gsContinuar" hidden>Continuar</button>
+        <button class="btn btn-primary" id="gsSalvar" hidden>Confirmar e salvar</button>
+        <button class="btn btn-perigo" id="gsDesativar" hidden>Desativar diretor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovRegional" hidden>
+  <div class="modal mapa" role="dialog" aria-modal="true" aria-labelledby="rgTitulo" style="max-width:640px">
+    <div class="mapa-cab"><h3 id="rgTitulo">Equipe da regional</h3>
+      <button type="button" class="btn-link btn-fechar" id="rgFechar" aria-label="Fechar" title="Fechar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <p class="hint" id="rgSub" style="margin-bottom:18px"></p>
+
+    <!-- lista da equipe -->
+    <div id="rgPainelLista" hidden>
+      <div id="rgEquipe"></div>
+      <button class="btn btn-primary" id="rgNovo" style="margin-top:14px">Cadastrar o Superintendente</button>
+      <p class="hint" id="rgDica" style="margin-top:12px">Cada pessoa entra com a própria conta institucional, sem senha; quem não a tem define a própria senha pelo link de primeiro acesso. É o e-mail cadastrado aqui que libera o acesso. Suspender mantém o cadastro e tira o acesso; o período fica registrado no histórico.</p>
+      <details class="gs-hist" id="rgHistBox">
+        <summary id="rgHistResumo">Histórico de acessos desta regional</summary>
+        <div id="rgHist"></div>
+      </details>
+    </div>
+
+    <!-- formulário -->
+    <div id="rgPainelForm" hidden>
+      <p class="hint" id="rgFormIntro" style="margin-bottom:14px"></p>
+      <div class="gs-form">
+        <div class="field" style="grid-column:1 / -1"><label for="rgNome">Nome do responsável</label>
+          <input id="rgNome" type="text" autocomplete="off"></div>
+        <div class="field" style="grid-column:1 / -1"><label for="rgEmail">E-mail institucional</label>
+          <input id="rgEmail" type="email" autocomplete="off" placeholder="nome@educacao.mg.gov.br"></div>
+        <div class="field"><label for="rgSituacao">Situação</label>
+          <select id="rgSituacao"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+          <span class="dica">Inativo continua cadastrado, mas não entra no sistema.</span></div>
+      </div>
+    </div>
+
+    <p class="land-erro" id="rgErro"></p>
+    <div class="gs-pe">
+      <button class="btn btn-ghost" id="rgVoltar" hidden>Voltar</button>
+      <div class="gs-pe-dir">
+        <button class="btn btn-ghost" id="rgCancelar">Fechar</button>
+        <button class="btn btn-primary" id="rgSalvar" hidden>Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovEscola" hidden>
+  <div class="modal mapa" role="dialog" aria-modal="true" aria-labelledby="ecTitulo" style="max-width:560px">
+    <div class="mapa-cab"><h3 id="ecTitulo">Cadastrar escola na base da rede</h3>
+      <button type="button" class="btn-link btn-fechar" id="ecFechar" aria-label="Fechar" title="Fechar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <p class="hint" id="ecIntro" style="margin-bottom:18px">A escola cadastrada aqui passa a existir para todo o sistema: é ela que aparece na lista de acessos, é dela que vêm o nome e a regional gravados no PPP.</p>
+    <div class="gs-form">
+      <div class="field"><label for="ecInep">Código da escola</label>
+        <input id="ecInep" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Ex.: 184381">
+        <span class="dica" id="ecInepDica">Somente números, de 2 a 8 dígitos. É a identidade da escola e não muda depois.</span></div>
+      <div class="field"><label for="ecMunicipio">Município</label>
+        <input id="ecMunicipio" type="text" maxlength="60" autocomplete="off"></div>
+      <div class="field" style="grid-column:1 / -1"><label for="ecCodInep">Código INEP</label>
+        <input id="ecCodInep" type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="8 dígitos">
+        <span class="dica" id="ecCodInepDica">Obrigatório, 8 dígitos. É o código que identifica a escola no Censo Escolar e o que permite cruzá-la com as bases federais.</span></div>
+      <div class="field" style="grid-column:1 / -1"><label for="ecNome">Nome da escola</label>
+        <input id="ecNome" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Escola Estadual …"></div>
+      <div class="field" style="grid-column:1 / -1"><label for="ecSre">Superintendência Regional de Ensino</label>
+        <input id="ecSre" type="text" maxlength="80" list="ecSres" autocomplete="off">
+        <datalist id="ecSres"></datalist>
+        <span class="dica" id="ecSreDica">Escolha uma das regionais já cadastradas ou digite a nova.</span></div>
+    </div>
+    <p class="hint" id="ecAvisoAcesso" hidden style="margin-top:12px"></p>
+    <p class="land-erro" id="ecErro"></p>
+    <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between">
+      <button class="btn btn-ghost" id="ecSituacao" hidden>Inativar escola</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" id="ecCancelar">Cancelar</button>
+        <button class="btn btn-primary" id="ecSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMapa" hidden>
+  <div class="modal mapa" role="dialog" aria-modal="true" aria-labelledby="mapaTitulo">
+    <div class="mapa-cab"><h3 id="mapaTitulo">Mapa do percurso</h3>
+      <button type="button" class="btn-link btn-fechar" id="btnFecharMapa" aria-label="Fechar" title="Fechar"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+    <p class="hint" style="margin-bottom:14px"><span id="mapaQtd">As telas do percurso e o que ainda falta em cada uma.</span> Selecione uma tela para ir até ela.</p>
+    <div id="mapaCorpo"></div>
+  </div>
+</div>
+
+<div class="overlay ov-doc" id="ovDoc" hidden>
+  <div class="ov-doc-inner">
+    <div class="ov-doc-barra">
+      <span id="ovDocTitulo">Documento</span>
+      <div class="ov-doc-zoom">
+        <button type="button" id="btnDocMenos" aria-label="Diminuir a página"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8h9"/></svg></button>
+        <span id="docZoomCheio">100%</span>
+        <button type="button" id="btnDocMais" aria-label="Aumentar a página"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg></button>
+      </div>
+      <button class="btn btn-ghost" id="btnFecharDoc"><svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>Fechar</button>
+    </div>
+    <details class="doc-sumario" id="docSumario" hidden>
+      <summary>Ir para uma seção</summary>
+      <nav id="docSumarioLista" aria-label="Seções do documento"></nav>
+    </details>
+    <div class="docwrap docwrap--full"><div class="paper"><div class="doc" id="docFull"></div></div></div>
+  </div>
+</div>
+
+<div class="overlay ov-cur" id="ovCuradoria" hidden>
+  <div class="cur">
+    <div class="cur-top">
+      <div>
+        <strong>Curadoria de conteúdo</strong>
+        <span class="sub" id="curSub">Órgão Central · edição dos textos do sistema</span>
+      </div>
+      <div class="cur-acoes" id="curAcoes" hidden>
+        <input id="curBusca" type="search" placeholder="Buscar no conteúdo…" aria-label="Buscar no conteúdo">
+        <button class="cur-btn" id="curPrevia">Ver prévia</button>
+        <button class="cur-btn" id="curSalvar">Salvar rascunho</button>
+        <button class="cur-btn forte" id="curPublicar">Publicar</button>
+        <button class="cur-btn" id="curFechar">Fechar</button>
+      </div>
+    </div>
+    <!-- v8.13 (E04): aqui havia um SEGUNDO login do Órgão Central, com senha,
+         nome e MASP, servido por `curadoriaEntrar`. Aquela porta conservava a
+         regra anterior à v8.4 (com e-mail vazio, a lista CURADORES nunca era
+         conferida) e tinha contador de tentativas global, que um anônimo
+         derrubava para todos. A entrada do Órgão Central é UMA SÓ, na
+         abertura; a curadoria abre a partir da sessão que ela cria. -->
+
+    <div class="cur-aviso" id="curAvisoResolucao" hidden></div>
+    <div class="cur-corpo" id="curCorpo" hidden>
+      <nav class="cur-nav" id="curNav" aria-label="Grupos de conteúdo"></nav>
+      <div class="cur-campos" id="curCampos"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="overlay" id="ovAviso" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="avisoTitulo" style="max-width:520px;text-align:left">
+    <h3 id="avisoTitulo"></h3>
+    <div id="avisoTexto" class="sub"></div>
+    <p class="land-erro" id="avisoErro" role="alert"></p>
+    <div id="avisoBotoes">
+      <button class="btn btn-ghost" id="avisoCancelar" hidden>Cancelar</button>
+      <button class="btn btn-primary" id="avisoOk">Fechar</button>
+    </div>
+  </div>
+</div>
+<div class="tarja-salvar" id="tarjaSalvar" role="status" hidden>
+  <svg class="ico" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.2 14.3 13.3H1.7L8 2.2Z"/><path d="M8 6.6v3M8 11.7h.01"/></svg>
+  <span id="tarjaSalvarTexto"></span>
+  <button type="button" class="btn btn-ghost" id="tarjaSalvarBtn">Tentar salvar agora</button>
+</div>
+<footer class="foot">Gerador de PPP · Secretaria de Estado de Educação de Minas Gerais · <span id="footVersao">—</span></footer>
+
+<div id="paramsUrl" hidden aria-hidden="true" data-v="<?= paramV ?>" data-pa="<?= paramPa ?>"></div>
+<script>/* v8.11: os parâmetros da URL, entregues pelo servidor.
+   v8.13: entregues em ATRIBUTO e lidos por dataset. Impressos dentro deste
+   bloco de script, um valor que trouxesse a marca de fechamento da tag
+   encerrava o bloco e o resto do parâmetro virava markup executável; em
+   atributo o escape de HTML do scriptlet do Apps Script não tem contexto que
+   possa ser quebrado. */
+window.PARAMETROS = (function(){
+  try {
+    var el = document.getElementById('paramsUrl');
+    var d = el && el.dataset ? el.dataset : {};
+    return { v: String(d.v || ''), pa: String(d.pa || '') };
+  } catch(e){ return { v: '', pa: '' }; }
+})();</script>
+<div id="brasaoFonte" hidden aria-hidden="true"><?!= include('Brasao'); ?></div>
+<?!= include('App'); ?>
+<!--DEMO-->
+<script>bootstrap();</script>
+</body>
+</html>

@@ -1,0 +1,1292 @@
+<style>
+/* v8.14 — SEM TRAÇO COLORIDO À ESQUERDA DAS CAIXAS.
+   O filete vertical de 4 px era usado para diferenciar cartão de cartão —
+   azul para o institucional, âmbar para o que pede atenção, verde para o que
+   está em dia. Numa tela cheia de caixas ele vira listra, e a distinção que
+   importa já está escrita: o título do cartão, o selo da situação e a cor do
+   próprio fundo dizem a mesma coisa sem riscar a página. A borda das caixas
+   passa a ser uma só, de um pixel.
+   Ficam de fora, por não serem borda de caixa: o fio da linha do tempo, o
+   realce transparente do documento em edição e o bloco de exemplo que só o
+   Órgão Central vê ao editar textos. */
+
+:root{
+  /* v9.0 (M02): uma paleta só. Cor de significado (ok/alerta/erro) só em selo,
+     caixa de aviso, erro de campo e círculo de estado; azul é o único acento.
+     Os pares "-tinta" são fundo de selo e de caixa de aviso, nunca de seção;
+     os "-borda" são a tinta 20% mais escura, para a caixa não sumir no branco. */
+  --azul-profundo:#1F3864;--azul-inst:#1F4E79;--azul-medio:#2E5395;
+  --azul-tinta:#DCE6F2;--azul-gelo:#EEF2F7;
+  --grafite:#232A31;--cinza-2:#5A6572;
+  --linha:#D7DEE7;--linha-forte:#8E9AAB;
+  --papel:#FFFFFF;--papel-2:#FBFCFE;--fundo:#EDF0F4;
+  --sobre-azul:#DCE6F2;
+  --ok:#1B6B4A;--ok-tinta:#E4F1EA;--ok-borda:#BFE0CE;
+  --alerta:#6E5615;--alerta-tinta:#FBF3DC;--alerta-borda:#E8D9A8;
+  --erro:#8A2F1F;--erro-tinta:#FBEBEA;--erro-borda:#EBC9C4;
+  /* v9.0 (M02): geometria e escala. Dois raios, uma sombra (só para o que
+     flutua), cinco tamanhos de texto que não mudam com a largura da tela. */
+  --raio:8px;--raio-g:12px;
+  --sombra:0 1px 2px rgba(31,56,100,.06),0 12px 32px rgba(31,56,100,.12);
+  --anel:0 0 0 3px rgba(46,83,149,.18);
+  --e-1:4px;--e-2:8px;--e-3:12px;--e-4:16px;--e-5:24px;--e-6:32px;--e-7:48px;
+  --t-1:12px;--t-2:13.5px;--t-3:15px;--t-4:18px;--t-5:23px;
+  --toque:44px;
+  /* v9.0 (M31): pilha de reserva — sem rede a fonte cai em Segoe/Roboto, não em DejaVu */
+  --fonte:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --fonte-titulo:'Archivo',var(--fonte);
+  /* Largura máxima do conteúdo. Sem ela, em telas largas os quadros crescem
+     sem limite enquanto o texto permanece preso à medida de leitura, e a
+     caixa fica com um vazio à direita. */
+  --largura:1660px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{font-family:var(--fonte);background:var(--fundo);color:var(--grafite);font-size:var(--t-3);line-height:1.55}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--azul-medio);outline-offset:2px;border-radius:4px}
+h2[tabindex="-1"]:focus{outline:none}
+
+.top{background:var(--azul-profundo);color:var(--papel)}
+.top-inner{max-width:var(--largura);margin:0 auto;padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.mark{width:44px;height:44px;border-radius:var(--raio);flex:0 0 auto;background:linear-gradient(150deg,var(--azul-inst),var(--azul-medio));display:flex;align-items:center;justify-content:center;font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-3);border:1px solid rgba(255,255,255,.25);color:var(--papel)}
+.brand-t strong{display:block;font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-4);line-height:1.25}
+.brand-t span{display:block;font-size:var(--t-1);color:var(--sobre-azul);margin-top:3px}
+.badge-proto{font-family:var(--fonte-titulo);font-weight:600;font-size:var(--t-1);letter-spacing:.08em;text-transform:uppercase;color:var(--sobre-azul);border:1px solid rgba(220,230,242,.45);padding:6px 12px;border-radius:999px;white-space:normal;max-width:100%;min-width:0}
+/* v8.6 (E1): o protocolo não se parte; o aviso, sim — e no celular vira um ponto */
+.badge-id{white-space:nowrap}
+.badge-aviso{white-space:nowrap}
+.badge-proto.salvo{color:var(--ok-tinta);border-color:rgba(160,230,195,.6)}
+.demo-ribbon{background:var(--alerta);color:var(--alerta-tinta);font-size:var(--t-1);text-align:center;padding:6px 16px}
+
+/* v9.0 (M26): o botão do topo é o secundário sobre escuro, com altura de toque (era 31 px) */
+.btn-topo{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.4);color:var(--papel);min-height:var(--toque);
+  border-radius:var(--raio);padding:8px 14px;font-family:var(--fonte);font-size:var(--t-2);font-weight:600;white-space:nowrap;line-height:1.2}
+.btn-topo:hover{background:rgba(255,255,255,.2);border-color:var(--papel)}
+.trilha{background:var(--papel);border-bottom:1px solid var(--linha);position:sticky;top:0;z-index:30}
+.trilha-inner{max-width:none;margin:0;padding:0 26px 0 0;display:flex;gap:2px;overflow-x:auto;min-width:0;flex:1}
+/* v9.0 (M17): o botão do módulo não encolhe (flex:0 1 auto + min-width:0
+   esmagava o círculo do número a 20 px no celular); a pendência é contagem,
+   não alarme — vira neutra, e só o módulo atual a mostra em azul-tinta. */
+.mod-btn{background:none;border:none;border-bottom:3px solid transparent;padding:10px 10px 8px;display:flex;align-items:center;gap:8px;color:var(--cinza-2);white-space:nowrap;flex:0 0 auto;min-width:44px;min-height:var(--toque)}
+.mod-btn .num{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-1);width:24px;height:24px;border-radius:50%;flex:0 0 auto;border:1.5px solid var(--linha-forte);display:flex;align-items:center;justify-content:center;background:var(--papel)}
+.mod-btn .lbl{font-size:var(--t-1);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;display:none}
+.mod-btn.current .lbl,.mod-btn.com-nome .lbl,.mod-btn:hover .lbl,.mod-btn:focus-visible .lbl{display:inline}
+/* v8.8 (F4): o vizinho aparece com nome, mas em tom mais discreto que o atual */
+.mod-btn.com-nome:not(.current) .lbl{color:var(--cinza-2);font-weight:500;max-width:15ch}
+.mod-btn.current,.mod-btn:hover{flex-shrink:0}
+.mod-btn.current{color:var(--azul-inst);border-bottom-color:var(--azul-inst)}
+.mod-btn.current .num{background:var(--azul-inst);border-color:var(--azul-inst);color:var(--papel)}
+.mod-btn.done .num{background:var(--ok-tinta);border-color:var(--ok);color:var(--ok)}
+.mod-btn:hover{color:var(--azul-medio)}
+.mod-btn .pend{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:var(--azul-gelo);color:var(--azul-profundo);display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.mod-btn.current .pend{background:var(--azul-tinta);color:var(--azul-profundo)}
+.trilha-linha{display:flex;align-items:center;gap:8px;max-width:var(--largura);margin:0 auto;padding:0 26px}
+.trilha-linha .trilha-inner{flex:1;min-width:0}
+.btn-mapa{flex:0 0 auto;background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio);padding:6px 11px;font-size:var(--t-1);font-weight:600;color:var(--azul-inst);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-mapa:hover{border-color:var(--azul-medio);background:var(--azul-gelo)}
+.modal.mapa{max-width:760px;text-align:left;padding:26px 28px 24px;max-height:calc(100vh - 48px);overflow-y:auto}
+.mapa-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.mapa-cab h3{margin:0}
+.mapa-mod{margin-bottom:14px}
+.mapa-mod h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.mapa-mod h4 .pend{font-size:var(--t-1);min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:var(--azul-gelo);color:var(--azul-profundo);display:inline-flex;align-items:center;justify-content:center;letter-spacing:0;line-height:1}
+.mapa-tela{display:flex;align-items:center;gap:10px;width:100%;background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio);padding:8px 12px;margin-bottom:5px;text-align:left;font-size:var(--t-2);color:var(--grafite)}
+.mapa-tela:hover{border-color:var(--azul-medio)}
+.mapa-tela.atual{border-color:var(--azul-inst);background:var(--azul-gelo)}
+.mapa-tela .n{font-family:var(--fonte-titulo);font-size:var(--t-1);color:var(--cinza-2);min-width:24px}
+.mapa-tela .tp{font-size:var(--t-1);letter-spacing:.05em;text-transform:uppercase;color:var(--cinza-2);min-width:118px}
+.mapa-tela .st{margin-left:auto;font-size:var(--t-1);font-weight:600;white-space:nowrap}
+.mapa-tela .st.ok{color:var(--ok)}
+.mapa-tela .st.pend{color:var(--alerta)}
+.mapa-tela .st.neutro{color:var(--cinza-2);font-weight:500}
+.barra{height:3px;background:var(--azul-gelo)}
+.barra span{display:block;height:100%;background:var(--azul-medio);width:0;transition:width .35s ease}
+
+.wrap{max-width:var(--largura);margin:0 auto;padding:18px 26px 48px}
+
+/* ============================================================
+   v9.2 — TEXTO CORRIDO JUSTIFICADO, EM TODA INTERFACE
+   A 9.0 tinha tirado a justificação da tela (M01) e deixado só no
+   documento. Pedido da coordenação: o texto corrido — o formativo, as
+   caixas, as dicas, as perguntas, o que a escola escreve — sai
+   justificado em todas as telas de todos os perfis, como no papel, com
+   hifenização automática (lang="pt-BR" no <html>) para que a linha
+   justificada não abra rios no celular. Fora daqui ficam o que não é
+   texto corrido: rótulos, botões, selos, títulos, tabelas e linhas de
+   lista. A última linha e os itens de uma linha só continuam à esquerda.
+   ============================================================ */
+.form-panel .lead,
+.form-body p,.form-body li,
+.lista-mark li,
+.perguntas li,
+.hint,.ajuda,.helper,.field .sub,.dica,.legend-sub,.lista-nota,
+.tarefa .intro,
+.tarefa label,
+.aviso-cx p,.aviso-cx span,.aviso-cx,
+.card-dest p,.card-atencao p,.card-encerra p,.card-versao p,
+.info-strip span,.alerta-dado span,
+.det-box p,.det-box li,.det-opt label,
+.compare p,.comp-card p,.tab-nota,.aprof-card p,.aprof-card li,
+.video-pauta p,.video-cap,
+.ex-card .txt,.ex-card .notas li,
+.devolutiva li,.devolutiva p,
+.bloco-escrita .helper,
+.bloco-escrita textarea,.cur-campos textarea,
+.declara span.tx,
+.cur-grupo-nota,.cur-aviso,
+.pi-parecer,.pi-parecer p,
+.landing-card p,.porta .pd,
+.vazio-aviso,.pi-vazio,
+.leitura{text-align:justify;text-justify:inter-word;hyphens:auto;-webkit-hyphens:auto}
+/* Nada de text-wrap:balance aqui: ele encurta as linhas e a justificação
+   as estica de volta, abrindo vãos enormes entre as palavras. */
+/* a última linha de um parágrafo nunca é esticada; itens de uma linha só
+   (rótulos de tarefa, opções) permanecem visualmente à esquerda */
+.tarefa label,.det-opt label,.porta .pd,.field .sub{text-align-last:left}
+/* v9.0 (M06): com o painel institucional aberto, o <main> do percurso e a
+   trilha continuavam ocupando lugar (84 px no computador, 110 no celular)
+   atrás do #stage escondido — o vão entre a faixa e o cabeçalho do painel. */
+body:has(#painelInst:not([hidden])) #conteudo,body:has(#painelInst:not([hidden])) .trilha{display:none}
+
+/* v9.0 (M01): a interface é alinhada à esquerda. O bloco que justificava
+   o texto corrido saiu: em colunas de 300-680 px e sem dicionário de
+   hifenização o navegador abria vãos entre as palavras, pior no celular.
+   Justificado só no documento (DocCss.html). */
+.stage{display:grid;gap:24px;align-items:start;grid-template-columns:1fr 1fr}
+.col-form{min-width:0}
+.panel{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio-g);padding:26px 28px 30px}
+.eyebrow{font-family:var(--fonte-titulo);font-weight:600;font-size:var(--t-1);letter-spacing:.16em;text-transform:uppercase;color:var(--azul-medio);display:block;margin-bottom:8px}
+.panel h2{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-5);color:var(--azul-profundo);line-height:1.25;margin-bottom:8px}
+.hint{color:var(--cinza-2);font-size:var(--t-2);max-width:62ch;margin-bottom:22px}
+.hint b{color:var(--grafite);font-weight:600}
+.form-panel{padding:30px 34px 34px}
+.form-panel .lead{font-size:var(--t-3);line-height:1.6;margin-bottom:22px;max-width:64ch}
+.form-body p{margin-bottom:14px;max-width:68ch}
+.form-body p:last-child{margin-bottom:0}
+
+.videobox{margin:0 0 24px}
+.video-frame{position:relative;aspect-ratio:16/9;border-radius:var(--raio-g);overflow:hidden;background:var(--azul-profundo);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;border:1px solid rgba(31,56,100,.3);cursor:pointer}
+.video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.play{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;transition:background .18s,transform .18s}
+.video-frame:hover .play{background:rgba(255,255,255,.28);transform:scale(1.06)}
+.video-txt{text-align:center;color:var(--papel);padding:0 20px}
+.video-txt .vt{font-family:var(--fonte-titulo);font-weight:600;font-size:var(--t-3)}
+.video-txt .vd{font-size:var(--t-1);color:var(--sobre-azul);margin-top:4px}
+.video-cap{font-size:var(--t-1);color:var(--cinza-2);margin-top:8px;display:flex;gap:6px;align-items:center}
+.video-pauta{margin-top:8px;font-size:var(--t-2);color:var(--cinza-2)}
+.video-pauta summary{cursor:pointer;font-weight:600;color:var(--azul-medio);font-size:var(--t-1)}
+.video-pauta p{margin-top:6px;max-width:66ch}
+.leitura{font-size:var(--t-1);color:var(--cinza-2);margin:-12px 0 18px}
+
+/* ==========================================================
+   v9.0 (M21) — UM MOLDE DE CAIXA DE AVISO.
+   Dez caixas (.card-dest, .card-atencao, .info-strip, .alerta-dado,
+   .devolutiva, .verif-ok, .verif-erro, .cur-aviso, .tarja-salvar,
+   .pi-parecer) tinham seis desenhos. Agora: .aviso-cx com as classes
+   antigas como alias e quatro variantes — info (gelo, padrão), ok, alerta,
+   erro. A cor do significado fica no ícone, na borda e no fundo; o texto é
+   grafite. As caixas com ícone à esquerda são flex; as de bloco (título +
+   parágrafos, lista) continuam em bloco.
+   ========================================================== */
+.aviso-cx,.card-dest,.card-atencao,.info-strip,.alerta-dado,.devolutiva,.verif-ok,.verif-erro,.cur-aviso,.tarja-salvar,.pi-parecer{
+  display:block;padding:12px 14px;border-radius:var(--raio);border:1px solid var(--azul-tinta);background:var(--azul-gelo);
+  color:var(--grafite);font-size:var(--t-2);line-height:1.5}
+.aviso-cx.com-ico,.info-strip,.alerta-dado,.tarja-salvar{display:flex;gap:10px;align-items:flex-start}
+.aviso-cx>.ico,.info-strip>svg,.alerta-dado>svg,.tarja-salvar>svg{flex:0 0 auto;width:16px;height:16px;margin-top:2px;color:var(--azul-medio)}
+.aviso-cx.ok,.verif-ok,.alerta-ok{border-color:var(--ok-borda);background:var(--ok-tinta)}
+.aviso-cx.ok>.ico,.alerta-ok>svg{color:var(--ok)}
+.aviso-cx.alerta,.card-atencao,.alerta-dado,.devolutiva,.verif-erro,.cur-aviso,.tarja-salvar,.pi-parecer{border-color:var(--alerta-borda);background:var(--alerta-tinta)}
+.aviso-cx.alerta>.ico,.alerta-dado>svg,.tarja-salvar>svg{color:var(--alerta)}
+.aviso-cx.erro,.alerta-dado.erro{border-color:var(--erro-borda);background:var(--erro-tinta)}
+.aviso-cx.erro>.ico,.alerta-dado.erro>svg{color:var(--erro)}
+.aviso-cx h4,.card-dest h4,.card-atencao h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:8px}
+.card-atencao h4{color:var(--alerta)}
+.card-dest,.card-atencao{padding:16px 18px;margin:18px 0}
+.card-dest p,.card-atencao p{margin-bottom:8px;font-size:var(--t-2)}
+.card-dest p:last-child,.card-atencao p:last-child{margin-bottom:0}
+.lista-mark{margin:16px 0}
+.lista-mark h4{font-family:var(--fonte-titulo);font-size:var(--t-2);font-weight:700;color:var(--azul-profundo);margin-bottom:10px}
+.lista-mark ul{list-style:none}
+.lista-mark li{position:relative;padding-left:26px;margin-bottom:9px;font-size:var(--t-3);max-width:68ch}
+.lista-mark li::before{content:"";position:absolute;left:6px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--azul-medio)}
+.lista-legal li::before{content:"§";background:none;left:2px;top:0;color:var(--azul-medio);font-weight:700;font-size:var(--t-3);width:auto;height:auto}
+.tab-form{margin:20px 0}
+.tab-form h4{font-family:var(--fonte-titulo);font-size:var(--t-2);font-weight:700;color:var(--azul-profundo);margin-bottom:10px}
+.tab-scroll{overflow-x:auto;border:1px solid var(--linha);border-radius:var(--raio)}
+.tab-form table{width:100%;border-collapse:collapse;font-size:var(--t-2);min-width:520px}
+.tab-form th{background:var(--azul-gelo);color:var(--azul-profundo);font-size:var(--t-1);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:9px 10px;border-bottom:1px solid var(--linha)}
+.tab-form td{padding:9px 10px;border-bottom:1px dashed var(--linha);vertical-align:top;color:var(--cinza-2)}
+.tab-form td.pri{color:var(--grafite);font-weight:600;white-space:nowrap}
+.tab-form tr:last-child td{border-bottom:none}
+.tab-nota{font-size:var(--t-1);color:var(--cinza-2);margin-top:8px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.comp-card{border:1px solid var(--linha);border-radius:var(--raio);padding:14px 16px;background:var(--papel)}
+.comp-card h5{font-family:var(--fonte-titulo);font-size:var(--t-1);letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px}
+.comp-card.sim h5{color:var(--ok)}
+.comp-card.nao h5{color:var(--erro)}
+.comp-card p{font-size:var(--t-2);margin-bottom:7px;color:var(--cinza-2)}
+.comp-card p:last-child{margin-bottom:0}
+.perguntas{border:1px solid var(--azul-tinta);border-radius:var(--raio-g);background:var(--papel);padding:20px 22px;margin:20px 0}
+.perguntas h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:14px}
+.perguntas ol{list-style:none;counter-reset:q}
+.perguntas li{counter-increment:q;position:relative;padding-left:36px;margin-bottom:13px;font-size:var(--t-3);max-width:64ch}
+.perguntas li:last-child{margin-bottom:0}
+.perguntas li::before{content:counter(q);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--azul-inst);color:var(--papel);font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;display:flex;align-items:center;justify-content:center}
+.aprof-card{border:1px solid var(--linha);border-radius:var(--raio-g);padding:20px 22px;margin-bottom:14px;background:var(--papel)}
+.aprof-card h3{font-family:var(--fonte-titulo);font-size:var(--t-3);color:var(--azul-profundo);margin-bottom:3px}
+.aprof-card .ref{font-size:var(--t-1);color:var(--cinza-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:11px}
+.aprof-card p{font-size:var(--t-3);margin-bottom:12px}
+.aprof-card .no-ppp{border-top:1px dashed var(--linha);padding-top:12px}
+.aprof-card .no-ppp h5{font-family:var(--fonte-titulo);font-size:var(--t-1);letter-spacing:.09em;text-transform:uppercase;color:var(--azul-medio);margin-bottom:8px}
+.aprof-card .no-ppp li{font-size:var(--t-2);padding-left:22px}
+.aprof-card .no-ppp li::before{width:5px;height:5px;left:6px;top:8px}
+
+.grid-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1 / -1}
+.field label{font-size:var(--t-1);font-weight:600}
+.field input,.field select,.field textarea{font-family:var(--fonte);font-size:var(--t-3);color:var(--grafite);border:1px solid var(--linha);border-radius:var(--raio);padding:10px 12px;background:var(--papel-2)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+/* v9.0 (M16): uma regra de ajuda para todas as ajudas de campo; a referência
+   legal deixa o azul em caixa alta (parecia link); o erro é escrito sob o
+   campo. Ordem fixa: rótulo → ajuda → campo → erro. */
+.ajuda,.field .sub,.field .dica,.dica,.bloco-escrita .helper,.legend-sub,.lista-nota{font-size:var(--t-2);color:var(--cinza-2);line-height:1.5}
+.campo-erro{display:flex;gap:6px;align-items:flex-start;color:var(--erro);font-size:var(--t-2);line-height:1.5;margin-top:2px}
+.campo-erro .ico{flex:0 0 auto;margin-top:2px}
+/* v9.0 (M15): o valor inválido é erro, não atenção — e a regra alcança as casas da tabela de indicadores */
+.campo-alerta,.field input.campo-alerta,.ind-tabela input.campo-alerta{border-color:var(--alerta);background:var(--alerta-tinta)}
+.campo-alerta.erro,.field input.campo-alerta.erro,.ind-tabela input.campo-alerta.erro{border-color:var(--erro);background:var(--erro-tinta)}
+.campos-escola{border-top:1px solid var(--linha);margin-top:26px;padding-top:22px}
+.campos-escola>h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--azul-inst);margin-bottom:16px}
+.bloco-escrita{margin-bottom:24px}
+.bloco-escrita:last-of-type{margin-bottom:0}
+.bloco-escrita textarea{width:100%;min-height:150px;resize:vertical;line-height:1.65;font-size:var(--t-3)}
+.bloco-escrita .helper{margin:0 0 2px}
+.bloco-escrita .ref-legal,.ref-legal{font-size:var(--t-1);color:var(--cinza-2);text-transform:none;letter-spacing:0;margin-top:4px}
+.contador{font-size:var(--t-1);color:var(--cinza-2);text-align:right;margin-top:4px}
+.devolutiva{list-style:none;margin:6px 0 4px;padding:9px 12px}
+.devolutiva li{font-size:var(--t-1);position:relative;padding-left:16px;margin-bottom:4px;line-height:1.45}
+.devolutiva li:last-child{margin-bottom:0}
+.devolutiva li::before{content:"›";position:absolute;left:3px;top:-1px;font-weight:700;color:var(--alerta)}
+
+fieldset{border:none}
+legend{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-2);letter-spacing:.08em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:4px}
+.legend-sub{font-size:var(--t-1);color:var(--cinza-2);margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;position:relative;border:1px solid var(--linha);border-radius:var(--raio);background:var(--papel);padding:13px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--azul-medio)}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt .box{width:20px;height:20px;border-radius:5px;flex:0 0 auto;margin-top:1px;border:1.5px solid var(--linha-forte);background:var(--papel);position:relative;transition:all .15s}
+.opt .box svg{position:absolute;inset:2px;width:auto;height:auto;opacity:0;transform:scale(.6);transition:all .15s;color:var(--papel)}
+.opt:has(input:checked){border-color:var(--azul-inst);background:var(--azul-gelo)}
+.opt:has(input:checked) .box{background:var(--azul-inst);border-color:var(--azul-inst)}
+.opt:has(input:checked) .box svg{opacity:1;transform:scale(1)}
+.opt-title{font-size:var(--t-2);font-weight:600;line-height:1.35;display:block}
+.opt-ref{font-size:var(--t-1);color:var(--cinza-2);display:block;margin-top:3px}
+.opt-wrap{display:flex;flex-direction:column}
+.det-box{border:1px solid var(--azul-tinta);border-top:none;border-radius:0 0 var(--raio) var(--raio);background:var(--papel);padding:12px 14px;margin-top:-4px}
+.det-tit{font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul-inst);margin-bottom:9px}
+.det-campo{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.det-campo:last-child{margin-bottom:0}
+.det-campo span{font-size:var(--t-1);font-weight:600;color:var(--cinza-2)}
+.det-campo select,.det-campo input{font-family:var(--fonte);font-size:var(--t-2);border:1px solid var(--linha);border-radius:var(--raio);padding:7px 9px;background:var(--papel);color:var(--grafite)}
+.det-campo select:focus,.det-campo input:focus{outline:none;border-color:var(--azul-medio);box-shadow:var(--anel)}
+/* v8.5: indicações da oferta com mais de uma marcação */
+.det-dica{display:block;font-style:normal;font-weight:500;font-size:var(--t-1);letter-spacing:.04em;text-transform:uppercase;color:var(--cinza-2);opacity:.8;margin:1px 0 3px}
+.det-nota{display:block;font-size:var(--t-1);font-weight:500;line-height:1.45;color:var(--cinza-2);margin-top:5px}
+.det-opcoes{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:2px}
+.det-opt{display:flex;align-items:center;gap:8px;min-height:34px;padding:4px 2px;cursor:pointer;font-size:var(--t-2);color:var(--grafite);flex:0 1 auto}
+.det-opt input{position:absolute;opacity:0;pointer-events:none}
+.det-opt .bx{width:20px;height:20px;border-radius:5px;flex:0 0 auto;border:1.5px solid var(--linha-forte);background:var(--papel);position:relative;transition:all .15s}
+.det-opt--radio .bx{border-radius:50%}
+.det-opt .bx svg{position:absolute;inset:2px;width:auto;height:auto;opacity:0;color:var(--papel);transition:opacity .15s}
+.det-opt:has(input:checked) .bx{background:var(--azul-inst);border-color:var(--azul-inst)}
+.det-opt:has(input:checked) .bx svg{opacity:1}
+.det-opt--radio:has(input:checked) .bx::after{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--papel)}
+/* v9.0 (M24): anel de foco em todas as caixas de seleção — navegando por
+   teclado o foco sumia nas marcações; só .det-opt tinha anel */
+.det-opt:has(input:focus-visible) .bx{box-shadow:var(--anel)}
+.opt:has(input:focus-visible),.tarefa label:has(input:focus-visible),.declara:has(input:focus-visible),.presenca-linha:has(input:focus-visible){outline:2px solid var(--azul-medio);outline-offset:2px}
+.det-opt:has(input:checked) .tx{font-weight:600}
+@media (max-width:560px){.det-opcoes{gap:2px 12px}.det-opt{flex:1 1 100%;min-height:40px}}
+.info-strip{margin-top:22px}
+
+/* v9.0 (M28): Anterior | aviso | Salvar | Avançar numa grade — com o aviso
+   visível a linha quebrava em três dentro da coluna de 680 px. O .nav-right
+   vira display:contents para os seus filhos entrarem na grade sem mexer no
+   markup; no celular volta a coluna. */
+.nav-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:0 12px;margin-top:18px}
+.nav-right{display:contents}
+/* os três botões não deixam lugar para o aviso na mesma linha de 680 px:
+   o aviso ocupa uma linha própria, acima deles, alinhado à direita */
+.nav-row .nav-aviso{grid-column:1 / -1;grid-row:1;justify-self:end;margin-bottom:10px}
+.nav-row #btnBack{grid-column:1;grid-row:2}
+.nav-row #btnSalvar{grid-column:3;grid-row:2}
+.nav-row #btnNext{grid-column:4;grid-row:2}
+/* ==========================================================
+   v9.0 (M04) — UMA HIERARQUIA DE BOTÕES, QUATRO NÍVEIS.
+   Primário (.btn-primary): a ação que leva o fluxo adiante — uma por região.
+   Secundário (.btn-ghost): alternativa de mesmo nível que não avança.
+   Terciário (.btn-link): ação dentro de linha ou lista e navegação de volta;
+     é o alias das oito regras que antes desenhavam "link" de oito jeitos
+     (.pi-acao, .acao-min, .cur-mini, .cur-pe button, .land-link,
+     .land-voltar, .check-link, #btnOutroAcesso). Sem sublinhado em repouso:
+     o sublinhado e o fundo gelo aparecem no hover e no foco.
+   Destrutivo (.btn-perigo): remover, desativar, inativar — sempre seguido de
+     confirmar(), cujo #avisoOk recebe a mesma classe.
+   Todos com altura de toque (44 px). [disabled] deixa de ser "cursor:wait"
+   (um botão travado por limite não está esperando nada); "em voo" é
+   [aria-busy]. O travado (.travado) deixa o azul lavado de 2,5:1 e passa a
+   tinta com texto azul-profundo (9,2:1), com o cadeado à esquerda.
+   ========================================================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--toque);line-height:1.2;
+  border-radius:var(--raio);padding:10px 18px;font-family:var(--fonte);font-size:var(--t-3);font-weight:600;
+  border:1px solid transparent;transition:background .15s,border-color .15s,color .15s;text-decoration:none}
+.btn-primary{background:var(--azul-inst);color:var(--papel)}
+.btn-primary:hover{background:var(--azul-profundo)}
+.btn-ghost{background:var(--papel);border-color:var(--linha-forte);color:var(--grafite)}
+.btn-ghost:hover{border-color:var(--azul-medio);color:var(--azul-medio)}
+.btn-perigo{background:var(--papel);border-color:var(--erro);color:var(--erro)}
+.btn-perigo:hover{background:var(--erro-tinta)}
+.btn-sm{font-size:var(--t-2);padding:8px 12px;min-height:36px}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn[aria-busy]{cursor:progress}
+.btn-salvar{display:inline-flex}
+.btn.travado{background:var(--azul-tinta);color:var(--azul-profundo)}
+.btn.travado:hover{background:var(--azul-tinta)}
+.btn .ico,.btn-link .ico{width:16px;height:16px;flex:0 0 auto}
+.btn-link,.pi-acao,.acao-min,.cur-mini,.cur-pe button,.land-link,.land-voltar,.check-link{
+  display:inline-flex;align-items:center;gap:6px;background:none;border:none;border-radius:var(--raio);
+  color:var(--azul-inst);font-family:var(--fonte);font-size:var(--t-2);font-weight:600;line-height:1.2;
+  text-decoration:none;padding:6px 8px;min-height:36px;cursor:pointer;text-align:left}
+.btn-link:hover,.pi-acao:hover,.acao-min:hover,.cur-mini:hover,.cur-pe button:hover,.land-link:hover,.land-voltar:hover,
+.btn-link:focus-visible,.pi-acao:focus-visible,.acao-min:focus-visible,.cur-mini:focus-visible,.cur-pe button:focus-visible,.land-link:focus-visible,.land-voltar:focus-visible{
+  text-decoration:underline;background:var(--azul-gelo);color:var(--azul-profundo)}
+/* o terciário pequeno em destaque ("assinar", "continuar") é primário pequeno
+   em todas as larguras — antes só ganhava fundo no celular */
+.pi-acao.forte{background:var(--azul-inst);color:var(--papel);padding:6px 12px;text-decoration:none}
+.pi-acao.forte:hover,.pi-acao.forte:focus-visible{background:var(--azul-profundo);color:var(--papel);text-decoration:none}
+.nav-aviso{font-size:var(--t-2);color:var(--alerta);display:flex;align-items:center;gap:6px;line-height:1.3}
+.nav-aviso .ico{flex:0 0 auto}
+@keyframes destacaTarefa{0%{box-shadow:0 0 0 0 rgba(31,78,121,.45)}100%{box-shadow:0 0 0 14px rgba(31,78,121,0)}}
+.tarefa.destaque{animation:destacaTarefa 1s ease-out 2}
+
+/* ==========================================================
+   v9.0 (M03) — UMA FAMÍLIA DE SELOS.
+   Dez regras (.sit-status, .cob-status, .esc-tag, .sit, .ck-tag, .cur-badge,
+   .gs-atual-tag, .gh .marca, .pi-ressalva, .badge-versao) desenhavam o mesmo
+   estado de dez jeitos. Agora é um molde (.selo) e quatro variantes, e só
+   quatro: neutro (padrão), ok, alerta, erro. As classes antigas ficam como
+   alias — o JS e o markup não mudam — e os sufixos que cada uma usava
+   (.sim/.ok/.fim/.pub → ok; .nao/.and/.val/.pend/.ras/.outro → alerta;
+   .off → neutro; .vencida/.sem → erro) apontam para a variante certa.
+   A ressalva (.pi-ressalva) deixa de ser pílula: vira a segunda linha da
+   célula, em texto — uma pílula por célula.
+   ========================================================== */
+.selo,.sit-status,.esc-tag,.cob-status,.sit,.ck-tag,.cur-badge,.gs-atual-tag,.gh .marca,.badge-versao{
+  display:inline-block;font-family:var(--fonte);font-size:var(--t-1);font-weight:700;line-height:1.4;
+  letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap;
+  background:var(--azul-gelo);color:var(--grafite);vertical-align:middle}
+.selo.ok,.esc-tag.sim,.sit.ok,.ck-tag.ok,.sit-status.fim,.cob-status.fim,.cur-badge.pub,.gs-atual-tag,.gh .marca{
+  background:var(--ok-tinta);color:var(--ok)}
+.selo.alerta,.esc-tag.nao,.sit.pend,.ck-tag.pend,.sit-status.and,.cob-status.val,.cur-badge.ras,.cur-badge.outro{
+  background:var(--alerta-tinta);color:var(--alerta)}
+.selo.erro,.cob-status.sem,.selo.vencida{background:var(--erro-tinta);color:var(--erro)}
+.selo.neutro,.esc-tag.off{background:var(--azul-gelo);color:var(--cinza-2)}
+.gh .marca{margin-left:6px}
+.pi-ressalva{display:block;margin-top:4px;font-size:var(--t-1);font-weight:600;color:var(--alerta);white-space:normal}
+.pi-ressalva.vencida{color:var(--erro)}
+
+/* --- Painel do documento (coluna direita, fixa) --- */
+.col-doc{position:sticky;top:62px;height:calc(100vh - 78px);display:flex;flex-direction:column;min-width:0}
+.doc-barra{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--papel);border:1px solid var(--linha);border-bottom:none;
+  border-radius:var(--raio-g) var(--raio-g) 0 0;padding:9px 14px}
+.doc-barra-l{display:flex;flex-direction:column;gap:1px;min-width:0}
+.doc-barra-l .eyebrow{margin:0;font-size:var(--t-1);letter-spacing:.14em}
+.doc-barra-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.doc-count{font-size:var(--t-1);color:var(--cinza-2);white-space:nowrap}
+.doc-count b{color:var(--azul-inst)}
+.zoom{display:flex;align-items:center;gap:2px;border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden}
+.zoom button{background:var(--papel);border:none;width:26px;height:26px;font-size:var(--t-3);line-height:1;color:var(--azul-inst);font-weight:700}
+.zoom button:hover{background:var(--azul-gelo)}
+.zoom span{font-size:var(--t-1);color:var(--cinza-2);min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.doc-exp{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio);padding:5px 11px;font-size:var(--t-1);
+  font-weight:600;color:var(--grafite);display:flex;align-items:center;gap:6px}
+.doc-exp:hover{border-color:var(--azul-medio);color:var(--azul-medio)}
+/* v9.0 (M22): a grade pontilhada atrás da folha saiu — fundo liso */
+.docwrap{border:1px solid var(--linha);border-radius:var(--raio-g);padding:20px;background:var(--papel-2)}
+.docwrap--mini{flex:1;min-height:0;overflow-y:auto;border-radius:0 0 var(--raio-g) var(--raio-g);scroll-behavior:smooth}
+.paper{background:var(--papel);box-shadow:0 2px 6px rgba(31,56,100,.10),0 14px 34px rgba(31,56,100,.10);padding:0;min-height:420px;border-radius:2px;margin:0 auto;background:none;box-shadow:none}
+/* ==========================================================
+   v8.13 (D16) — O QUE É SÓ DA TELA NA FOLHA A4
+   A tipografia e a geometria do documento moram em DocCss.html, que o
+   Index inclui e que o servidor emite dentro do <style> do PDF. Aqui
+   ficam só as marcas de tela — a sombra da folha, a caixa de medição, o
+   realce do bloco e as marcas do modo de edição da curadoria.
+   NADA aqui pode alterar a MEDIDA do documento: quem acrescentar regra
+   que mude largura, altura, margem ou entrelinha faz a tela paginar
+   diferente do papel, que é o defeito que D16 corrigiu. A bateria
+   teste-paginacao.js compara os dois e é o que segura isso.
+   ========================================================== */
+.paginas.medindo{position:absolute;left:-10000px;top:0;visibility:hidden}
+.doc .pagina{background:var(--papel);margin:0 auto 14px;
+  box-shadow:0 2px 6px rgba(31,56,100,.12),0 14px 34px rgba(31,56,100,.10)}
+.paginas.medindo .pagina{box-shadow:none;margin:0 auto}
+
+/* v8.11: a conferência pública de autenticidade */
+.verif-campo{display:flex;gap:8px;margin:14px 0 10px}
+.verif-campo input{flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:var(--t-3);letter-spacing:.06em;
+  text-transform:uppercase;border:1px solid var(--linha);border-radius:var(--raio);padding:12px;background:var(--papel-2);min-height:46px}
+.verif-campo input:focus{outline:none;border-color:var(--azul-medio);box-shadow:var(--anel)}
+.verif-campo .btn{flex:0 0 auto;min-height:46px}
+.verif-acoes{display:flex;gap:8px;margin-top:12px}
+.verif-acoes .btn{flex:1;min-height:44px}
+@media (max-width:480px){.verif-acoes{flex-direction:column}}
+/* v8.12 — a antessala: entrar no sistema ou autenticar um documento */
+.portas-entrada{margin-top:4px}
+.porta-entrada{min-height:76px}
+/* no celular o campo e o botão não cabem lado a lado sem cortar o código:
+   o código é para ser CONFERIDO com o papel na mão, e tem de aparecer
+   inteiro. Abaixo de 420 px eles passam a ocupar uma linha cada. */
+@media (max-width:420px){
+  .verif-campo{flex-direction:column;gap:10px}
+  .verif-campo .btn{width:100%}
+}
+.verif-ok{padding:14px 16px}
+.verif-selo{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-3);color:var(--ok);margin-bottom:8px}
+.verif-linha{font-size:var(--t-2);line-height:1.5;color:var(--grafite);margin:0 0 2px}
+.verif-assin{margin-top:8px}
+.verif-assin summary{cursor:pointer;font-size:var(--t-1);font-weight:600;color:var(--azul-inst);min-height:36px;
+  display:flex;align-items:center}
+/* v8.9: o zoom da tela cheia, para quem lê no celular */
+.ov-doc-zoom{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:999px;padding:3px}
+.ov-doc-zoom button{background:none;border:none;color:var(--papel);width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;cursor:pointer;line-height:1}
+.ov-doc-zoom button:focus-visible,.ov-doc-barra .btn:focus-visible,.btn-topo:focus-visible,.cur-btn:focus-visible{outline-color:var(--papel)}
+@media (max-width:760px){.ov-doc-zoom button{width:var(--toque);height:var(--toque)}}
+.ov-doc-zoom button:hover{background:rgba(255,255,255,.18)}
+.ov-doc-zoom span{font-size:var(--t-1);min-width:44px;text-align:center}
+/* v8.13 (D16): a tipografia do documento saiu daqui para DocCss.html.
+   O que resta é o realce do bloco que a tela pisca ao editar — e ele foi
+   medido para NÃO mudar a largura do texto: 10 px de recheio mais 3 px de
+   borda menos 13 px de margem dão zero. Se mudar, a tela passa a quebrar a
+   linha em lugar diferente do papel. */
+.doc p.blk{border-left:3px solid transparent;padding-left:10px;margin-left:-13px}
+@keyframes flashIn{0%{background:#FFF3C4; /* v9.0: amarelo de marca-texto do realce do bloco no documento, não cor de interface */border-left-color:var(--azul-inst)}100%{background:transparent;border-left-color:transparent}}
+.doc p.blk.flash{animation:flashIn 1.4s ease-out}
+/* seção correspondente à tela atual */
+.doc h3.doc-h{scroll-margin-top:14px;transition:color .2s}
+.doc h3.doc-h.foco{color:var(--azul-inst)}
+.doc h3.doc-h.foco::before{content:"";position:absolute;left:-16px;top:.15em;bottom:.1em;width:3px;background:var(--azul-inst);border-radius:2px}
+.doc h3.doc-h{position:relative}
+.doc .em-foco{background:linear-gradient(90deg,rgba(46,83,149,.07),rgba(46,83,149,0));border-radius:4px}
+@keyframes pulsaFoco{0%{background:rgba(255,222,120,.45)}100%{background:transparent}}
+.doc h3.doc-h.pulsa{animation:pulsaFoco 1.2s ease-out}
+
+/* tela cheia do documento */
+.ov-doc{align-items:flex-start;padding:0;background:rgba(22,32,48,.72)}
+.ov-doc-inner{width:100%;max-width:1120px;margin:0 auto;padding:18px 20px 40px}
+.ov-doc-barra{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;color:var(--papel);font-family:var(--fonte-titulo);font-size:var(--t-3);font-weight:600;
+  position:sticky;top:0;z-index:3;background:rgba(22,32,48,.94);border-radius:0 0 var(--raio) var(--raio);
+  backdrop-filter:blur(3px)}
+.ov-doc-barra span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-doc-barra .btn{padding:8px 14px;min-height:40px;font-size:var(--t-2)}
+/* v9.0 (M20): as folhas brancas flutuam sobre o escurecido — era branco sobre branco */
+.docwrap--full{background:transparent;border:none;padding:0}
+.docwrap--full .paper{padding:44px 52px 56px}
+
+/* v8.13 (D16): as caixas de assinatura, a capa, o sumário e as referências
+   foram para DocCss.html — a tela desenha com as MESMAS regras do papel. */
+
+/* v9.0 (M12): a tela final é uma coluna flex para poder ser reordenada por
+   estado sem mexer no markup. Em elaboração a ordem é a do DOM (datas →
+   verificação → prévia → validação). Travado (body.doc-travado), o que a
+   pessoa veio fazer — ata, presença, assinatura — sobe; a verificação de
+   37 itens de um documento congelado desce, mais compacta. */
+#panelFinal{display:flex;flex-direction:column}
+body.doc-travado #cardEmValidacao{order:1}
+body.doc-travado #cardConcluir{order:2}
+body.doc-travado #cardAta{order:3}
+body.doc-travado #cardAssinaturas{order:4}
+body.doc-travado #cardAnexos{order:5}
+body.doc-travado #cardHomol{order:6}
+body.doc-travado #cardAtaOk{order:7}
+body.doc-travado #cardVersao{order:8}
+body.doc-travado #panelFinal>.panel{order:20}
+body.doc-travado #panelFinal>.final-grid{order:21}
+body.doc-travado #panelFinal>.actions-row{order:22}
+body.doc-travado .final-grid .check-card{padding:12px 16px}
+.final-grid{display:grid;gap:18px;margin-bottom:20px}
+.check-card{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio-g);padding:20px 24px}
+.check-card h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:12px}
+.check-item{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:var(--t-2);border-bottom:1px dashed var(--linha)}
+.check-item:last-child{border-bottom:none}
+.ck{width:20px;height:20px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:var(--t-1);font-weight:700;margin-top:1px}
+.ck .ico{width:13px;height:13px}
+.ck.ok{background:var(--ok-tinta);color:var(--ok)}
+.ck.pend{background:var(--alerta-tinta);color:var(--alerta)}
+.ck-ref{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:2px}
+.actions-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.switch-wrap{display:flex;align-items:center;gap:10px;font-size:var(--t-2);color:var(--cinza-2);cursor:pointer}
+.switch-wrap input{position:absolute;opacity:0}
+.sw{width:38px;height:21px;border-radius:999px;background:var(--linha-forte);position:relative;transition:background .15s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:2.5px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--papel);transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch-wrap:has(input:checked) .sw{background:var(--azul-inst)}
+.switch-wrap:has(input:checked) .sw::after{transform:translateX(16px)}
+.emit-note{font-size:var(--t-1);color:var(--cinza-2);margin:0 0 18px;text-align:right}
+
+.gs-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;text-align:left}
+.gs-hist{margin-top:18px;border-top:1px solid var(--linha);padding-top:14px;text-align:left}
+.gs-hist summary{cursor:pointer;font-size:var(--t-2);font-weight:600;color:var(--azul-inst)}
+.gs-hist .gh{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--linha);font-size:var(--t-2)}
+.gs-hist .gh:last-child{border-bottom:none}
+.gs-hist .gh .per{flex:0 0 auto;width:11px;height:11px;border-radius:50%;margin-top:4px;background:var(--linha)}
+.gs-hist .gh.atual .per{background:var(--ok)}
+.gs-hist .gh b{display:block}
+.gs-hist .gh .meta{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:2px;line-height:1.5}
+/* v8.12 — a mesma linha do tempo dos períodos, agora também numa aba
+   própria do painel, com o mesmo desenho que a janela da escola já usava */
+.gh-lista{border:1px solid var(--linha);border-radius:var(--raio);padding:4px 16px;background:var(--papel);max-width:900px}
+.gh-lista .gh{display:flex;gap:10px;align-items:flex-start;padding:12px 0;
+  border-bottom:1px dashed var(--linha);font-size:var(--t-2)}
+.gh-lista .gh:last-child{border-bottom:none}
+.gh-lista .gh .per{flex:0 0 auto;width:11px;height:11px;border-radius:50%;margin-top:4px;background:var(--linha)}
+.gh-lista .gh.atual .per{background:var(--ok)}
+.gh-lista .gh b{display:block}
+.gh-lista .gh .meta{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:2px;line-height:1.5}
+.gs-form .field:nth-child(3),.gs-form .field:nth-child(4){grid-column:1 / -1}
+.gs-atual{display:block;width:100%;text-align:left;border:1px solid var(--azul-tinta);background:var(--azul-gelo);
+  border-radius:var(--raio);padding:14px 16px;font-family:inherit;color:var(--grafite)}
+.gs-atual:hover{border-color:var(--azul-medio);background:var(--azul-gelo)}
+.gs-atual-nome{display:block;font-family:var(--fonte-titulo);font-size:var(--t-3);font-weight:700;color:var(--azul-profundo);margin-top:5px}
+.gs-atual-meta{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:3px}
+.gs-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.gs-acoes .btn{flex:1 1 200px}
+.gs-resumo{border:1px solid var(--linha);border-radius:var(--raio);background:var(--papel);padding:4px 16px;text-align:left}
+.gs-resumo div{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px dashed var(--linha)}
+.gs-resumo div:last-child{border-bottom:none}
+.gs-resumo dt{font-size:var(--t-1);letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-2);min-width:112px;flex:0 0 auto}
+.gs-resumo dd{font-size:var(--t-3);color:var(--grafite);min-width:0;word-break:break-word}
+.gs-resumo dd.vazio{color:var(--cinza-2);font-style:italic}
+.gs-pe{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gs-pe-dir{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+/* ==========================================================
+   v9.0 (M11) — UMA LINHA DE LISTA.
+   .eq-linha (fundo papel-2), .esc-linha e .reg-linha (fundo branco, grid de
+   4 colunas), .presenca-linha e .gh eram cinco moldes para o mesmo papel.
+   Agora é .linha, com as classes antigas como alias: fundo papel, borda
+   --linha, raio, nome em --t-3 600, meta em --t-2 cinza-2, selo à direita.
+   As listas de pessoas param em 1100 px — 1388 px para duas linhas de texto
+   era largura demais. Nas listas em que a linha é um <button> (Acessos,
+   Escolas, Regionais) o hover é só a borda azul, sem trocar o fundo.
+   ========================================================== */
+.linha,.eq-linha,.esc-linha,.reg-linha,.presenca-linha{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:start;
+  padding:12px 16px;border:1px solid var(--linha);border-radius:var(--raio);margin-bottom:8px;background:var(--papel);text-align:left;
+  width:100%;min-width:0;max-width:100%;overflow-wrap:anywhere;font-family:inherit;font-size:var(--t-2);color:var(--grafite)}
+.linha > span,.eq-linha > span{min-width:0}
+.linha b,.eq-linha b,.esc-linha b,.reg-linha b{display:block;font-size:var(--t-3);font-weight:600}
+.linha .sub-linha,.eq-linha .sub-linha,.esc-linha .sub-linha,.reg-linha .sub-linha,.presenca-linha .sub-linha{display:block;font-size:var(--t-2);color:var(--cinza-2);margin-top:2px;line-height:1.5}
+#piEquipe,#piColegiado,#piContas,#piAssinaturas,#piHistorico,#piInst #regLista,#escLista,#baseLista{max-width:1100px}
+.eq-acoes{grid-column:1 / -1;display:flex;gap:4px 12px;flex-wrap:wrap;
+  border-top:1px dashed var(--linha);margin-top:8px;padding-top:8px}
+.eq-acoes .pi-acao{margin-left:-8px}
+/* v7.3 (T-18): a 400 px a etiqueta desce para a linha de baixo e nada estoura */
+@media (max-width:480px){
+  .eq-linha{grid-template-columns:1fr;gap:6px;padding:10px 12px}
+  .eq-linha .esc-tag{white-space:normal}
+  .eq-acoes{gap:10px 14px}
+}
+.esc-linha,.reg-linha{grid-template-columns:minmax(0,2.4fr) minmax(0,1.6fr) auto auto;align-items:center;cursor:pointer}
+.esc-linha:hover,.reg-linha:hover,button.linha:hover{border-color:var(--azul-medio)}
+@media (max-width:760px){ .esc-linha,.reg-linha{grid-template-columns:1fr;gap:4px} .gs-form{grid-template-columns:1fr} }
+/* v8.6 (E2): com "align-items:center", o conteúdo mais alto que a tela
+   transborda para CIMA e a parte de cima fica inalcançável — é o que impedia
+   rolar o documento em tela cheia até a primeira seção. Com "flex-start" e
+   "margin:auto" nos filhos, o diálogo continua centrado quando cabe e rola
+   inteiro quando não cabe. */
+.overlay{position:fixed;inset:0;background:rgba(22,32,48,.55);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+.overlay>*{margin:auto}
+/* v9.0 (M19): diálogo com título e texto à esquerda e UM só "Fechar" — o do
+   topo vira o X de 44 px; o do rodapé (Cancelar) continua com texto. Só o
+   #overlay de "Documento emitido" continua centrado: é celebração. */
+.modal{background:var(--papel);border-radius:var(--raio-g);max-width:440px;width:100%;padding:28px 28px 24px;text-align:left;box-shadow:var(--sombra)}
+#overlay .modal{text-align:center;padding:34px 32px 28px}
+.btn-fechar{width:var(--toque);height:var(--toque);min-height:var(--toque);padding:0;justify-content:center;flex:0 0 auto;margin:-8px -10px 0 0;color:var(--cinza-2)}
+.btn-fechar .ico{width:18px;height:18px}
+.mapa-cab{align-items:flex-start}
+#avisoBotoes{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap}
+#avisoBotoes .btn{flex:0 0 auto}
+/* diálogo só informativo (um botão): o botão é secundário, não há o que "confirmar" */
+#avisoBotoes:has(#avisoCancelar[hidden]) #avisoOk:not(.btn-perigo){background:var(--papel);border-color:var(--linha-forte);color:var(--grafite)}
+#avisoBotoes:has(#avisoCancelar[hidden]) #avisoOk:not(.btn-perigo):hover{border-color:var(--azul-medio);color:var(--azul-medio)}
+@media (max-width:560px){#avisoBotoes{flex-direction:column-reverse}#avisoBotoes .btn{width:100%}}
+.modal .big-ck{width:58px;height:58px;border-radius:50%;background:var(--ok-tinta);color:var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.modal h3{font-family:var(--fonte-titulo);font-size:var(--t-4);line-height:1.25;color:var(--azul-profundo);margin-bottom:8px}
+.modal .fname{font-family:ui-monospace,Menlo,monospace;font-size:var(--t-1);background:var(--azul-gelo);border:1px solid var(--azul-tinta);border-radius:var(--raio);padding:9px 12px;margin:14px 0;word-break:break-all;color:var(--azul-profundo)}
+.modal p{font-size:var(--t-2);color:var(--cinza-2);margin-bottom:6px}
+.modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.modal-actions .btn{width:100%}
+a.btn{display:inline-block;text-decoration:none;text-align:center}
+.ident-card{border:1px solid var(--azul-tinta);background:var(--azul-gelo);border-radius:var(--raio);
+  padding:18px 20px;margin-bottom:18px;text-align:left}
+.ident-card .qm{font-size:var(--t-1);letter-spacing:.14em;text-transform:uppercase;color:var(--azul-medio);font-weight:700}
+.ident-card .nm{font-family:var(--fonte-titulo);font-size:var(--t-4);font-weight:700;color:var(--azul-profundo);margin:6px 0 2px}
+.ident-card .un{font-size:var(--t-3);color:var(--grafite)}
+.ident-card .em{font-size:var(--t-1);color:var(--cinza-2);margin-top:6px}
+.ident-card.aviso{border-color:var(--alerta-borda);background:var(--alerta-tinta)}
+.ident-card.aviso .nm{color:var(--alerta)}
+/* v9.0 (M18): a antessala é opaca — antes de entrar, a tela por trás não tem
+   nada a mostrar (a demonstração deixava ver o percurso). */
+#landing{background:var(--fundo)}
+.landing-card{background:var(--papel);border-radius:var(--raio-g);max-width:490px;width:100%;padding:32px 30px 28px;box-shadow:var(--sombra)}
+.landing-card .mark{margin-bottom:14px}
+.landing-card h3{font-family:var(--fonte-titulo);font-size:var(--t-4);color:var(--azul-profundo);margin-bottom:6px}
+.landing-card .sub{font-size:var(--t-2);color:var(--cinza-2);margin-bottom:20px}
+.landing-card .sub.lgpd{font-size:var(--t-1);border-top:1px solid var(--linha);padding-top:12px;margin-top:-6px}
+.landing-actions{display:flex;flex-direction:column;gap:10px}
+.landing-actions .btn{width:100%;padding:13px 20px;font-size:var(--t-3)}
+.land-retomar{display:none;gap:8px;margin-top:14px}
+.land-retomar.open{display:flex}
+.land-retomar input{flex:1;font-size:var(--t-3);text-transform:uppercase;border:1px solid var(--linha);border-radius:var(--raio);padding:11px 12px;background:var(--papel-2);font-family:var(--fonte)}
+.land-erro{display:none;color:var(--erro);font-size:var(--t-1);margin-top:10px}
+.land-erro.show{display:block}
+/* v9.0 (M14): o toast deixa de ser pílula — com quatro linhas no celular virava um balão */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);background:var(--azul-profundo);color:var(--papel);font-size:var(--t-2);font-weight:500;padding:12px 16px;border-radius:var(--raio);z-index:80;box-shadow:var(--sombra);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:min(90vw,520px);text-align:left;line-height:1.45}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+body.modo-edicao .toast{bottom:calc(var(--barra-h, 72px) + 10px)}
+body:has(#tarjaSalvar:not([hidden])) .toast{bottom:calc(var(--tarja-h,64px) + 12px)}
+
+/* --- Indicadores estruturados --- */
+.ind-tabela{width:100%;border-collapse:collapse;margin:6px 0 4px}
+.ind-tabela th,.ind-tabela td{border:1px solid var(--linha);padding:8px 6px;text-align:center;font-size:var(--t-2)}
+.ind-tabela thead th{background:var(--azul-gelo);color:var(--azul-profundo);font-weight:600;font-size:var(--t-1);letter-spacing:.03em;text-transform:uppercase}
+.ind-tabela td.et{text-align:left;font-weight:600;font-size:var(--t-2);background:var(--papel-2)}
+.ind-tabela input{width:100%;border:1px solid transparent;border-radius:var(--raio);padding:7px 6px;text-align:center;font-family:var(--fonte);font-size:var(--t-3);background:var(--papel-2);color:var(--grafite)}
+.ind-tabela input:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+.ind-scroll{overflow-x:auto;margin-bottom:6px}
+.ind-nota{font-size:var(--t-1);color:var(--cinza-2);margin-bottom:22px}
+.ind-tabela .seta{color:var(--cinza-2);margin:0 2px}
+.delta{font-size:var(--t-1);font-weight:700}
+.delta.bom{color:var(--ok)}
+.delta.ruim{color:var(--erro)}
+.delta.neutro{color:var(--cinza-2)}
+.alerta-dado{margin-bottom:10px}
+
+/* --- Tarefa de preparação --- */
+.tarefa{border:1px solid var(--azul-inst);border-radius:var(--raio-g);background:var(--papel);padding:20px 22px;margin:22px 0 4px}
+.tarefa h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:6px}
+.tarefa .intro{font-size:var(--t-2);color:var(--cinza-2);margin-bottom:14px;max-width:62ch}
+.tarefa label{display:flex;gap:11px;align-items:flex-start;padding:9px 0;cursor:pointer;font-size:var(--t-3);border-bottom:1px dashed var(--linha)}
+.tarefa label:last-of-type{border-bottom:none}
+.tarefa input{position:absolute;opacity:0;pointer-events:none}
+.tarefa .bx{width:20px;height:20px;border-radius:5px;flex:0 0 auto;margin-top:2px;border:1.5px solid var(--linha-forte);background:var(--papel);position:relative;transition:all .15s}
+.tarefa .bx svg{position:absolute;inset:2px;width:auto;height:auto;opacity:0;color:var(--papel);transition:opacity .15s}
+.tarefa label:has(input:checked) .bx{background:var(--azul-inst);border-color:var(--azul-inst)}
+.tarefa label:has(input:checked) .bx svg{opacity:1}
+.tarefa label:has(input:checked) span.tx{color:var(--cinza-2)}
+.tarefa .trava{font-size:var(--t-1);color:var(--alerta);margin-top:12px;display:flex;gap:7px;align-items:center}
+.tarefa.completa .trava{color:var(--ok)}
+
+/* --- Exemplos anotados --- */
+.exemplos{margin:22px 0}
+.exemplos > h4{font-family:var(--fonte-titulo);font-size:var(--t-2);font-weight:700;color:var(--azul-profundo);margin-bottom:12px}
+.ex-par{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ex-card{border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--papel);display:flex;flex-direction:column}
+/* v9.0 (M22): o rótulo "fraco"/"bom" deixa a barra cheia de cor — a oposição é o
+   conteúdo pedagógico; basta o título na cor sobre papel, com a borda embaixo */
+.ex-card .rot{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;background:var(--papel);border-bottom:1px solid var(--linha)}
+.ex-card.fraco .rot{color:var(--erro)}
+.ex-card.bom .rot{color:var(--ok)}
+.ex-card .txt{padding:14px;font-family:Georgia,'Times New Roman',serif;font-size:var(--t-3);line-height:1.6;color:var(--grafite);border-bottom:1px dashed var(--linha);flex:1}
+.ex-card .notas{padding:12px 14px;list-style:none;background:var(--papel)}
+.ex-card .notas li{position:relative;padding-left:20px;font-size:var(--t-1);color:var(--cinza-2);margin-bottom:7px;line-height:1.45}
+.ex-card .notas li:last-child{margin-bottom:0}
+.ex-card.fraco .notas li::before{content:"×";position:absolute;left:3px;top:-1px;color:var(--erro);font-weight:700}
+.ex-card.bom .notas li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--ok);font-weight:700;font-size:var(--t-1)}
+
+/* --- Acesso e versão --- */
+.acesso-ribbon{background:var(--erro);color:var(--erro-tinta);font-size:var(--t-1);text-align:center;padding:6px 16px}
+.badge-user{font-size:var(--t-1);color:var(--sobre-azul);display:block;margin-top:2px}
+.badge-versao{margin-left:6px;padding:0 6px;line-height:1.3;vertical-align:baseline;color:var(--azul-profundo)} /* v9.0 (M26): selo neutro sobre o azul escuro do cabeçalho */
+.card-versao{background:var(--papel);border:1px solid var(--azul-tinta);border-radius:var(--raio-g);padding:20px 24px;margin-bottom:18px}
+.card-versao h4{font-family:var(--fonte-titulo);font-size:var(--t-2);color:var(--azul-profundo);margin-bottom:6px}
+.card-versao p{font-size:var(--t-2);color:var(--cinza-2);margin-bottom:14px;max-width:66ch}
+
+/* v8.13 (D16): a tabela de indicadores e a linha de fonte foram para
+   DocCss.html, junto com o resto da tipografia do documento. */
+
+/* --- Conclusão e assinaturas --- */
+.card-encerra{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio-g);padding:24px 26px 26px;margin-bottom:18px}
+.card-encerra h3{font-family:var(--fonte-titulo);font-size:var(--t-4);color:var(--azul-profundo);margin-bottom:8px}
+.card-encerra p{font-size:var(--t-3);color:var(--cinza-2);max-width:68ch;margin-bottom:10px}
+.card-encerra p b{color:var(--grafite)}
+.card-encerra p.mini{font-size:var(--t-1)}
+.card-encerra .btn{margin-top:8px}
+.card-encerra.ata h3{color:var(--alerta)}
+.sub.ok{color:var(--ok);font-weight:600}
+.sub.alerta{color:var(--alerta);font-weight:600}
+.card-encerra.ata-ok h3{color:var(--ok)}
+.arq-zona{display:flex;gap:14px;align-items:center;border:1.5px dashed var(--azul-tinta);
+  background:var(--papel);border-radius:var(--raio);padding:16px 18px;margin:6px 0 16px}
+.arq-zona.tem{border-style:solid;border-color:var(--ok);background:var(--ok-tinta)}
+.arq-zona svg{flex:0 0 auto;color:var(--azul-medio)}
+.arq-zona.tem svg{color:var(--ok)}
+.arq-nome{font-size:var(--t-1);color:var(--cinza-2);margin:8px 0 0}
+.arq-zona.tem .arq-nome{color:var(--ok);font-weight:600}
+.bloco-assin{border-top:1px solid var(--linha);margin-top:20px;padding-top:20px}
+.bloco-assin:first-of-type{border-top:none;margin-top:14px;padding-top:0}
+.bloco-assin h4{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azul-profundo);margin-bottom:12px}
+.bloco-assin .grid-fields{margin-bottom:14px}
+.bloco-assin .btn{margin-right:8px}
+.declara{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--azul-tinta);background:var(--papel);border-radius:var(--raio);padding:15px 16px;margin:4px 0 16px;cursor:pointer}
+.declara input{position:absolute;opacity:0}
+.declara .bx{width:20px;height:20px;border-radius:5px;flex:0 0 auto;margin-top:1px;border:1.5px solid var(--linha-forte);background:var(--papel);position:relative;transition:all .15s}
+.declara .bx svg{position:absolute;inset:2px;width:auto;height:auto;opacity:0;color:var(--papel);transition:opacity .15s}
+.declara:has(input:checked) .bx{background:var(--azul-inst);border-color:var(--azul-inst)}
+.declara:has(input:checked) .bx svg{opacity:1}
+.declara span.tx{font-size:var(--t-2);line-height:1.5;max-width:70ch}
+.membro-linha{display:grid;grid-template-columns:2fr 1fr 2fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start}
+.membro-linha input,.membro-linha select{font-family:var(--fonte);font-size:var(--t-2);border:1px solid var(--linha);border-radius:var(--raio);padding:9px 10px;background:var(--papel-2);color:var(--grafite);width:100%}
+.membro-linha input:focus,.membro-linha select:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+.membro-linha .rm{background:none;border:1px solid var(--linha);border-radius:var(--raio);color:var(--erro);width:36px;height:36px;font-size:var(--t-3);line-height:1;flex:0 0 auto}
+.membro-linha .rm:hover{border-color:var(--erro)}
+.membro-cab{display:grid;grid-template-columns:2fr 1fr 2fr 1.2fr auto;gap:8px;margin-bottom:6px;font-size:var(--t-1);letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-2);font-weight:600}
+.tab-assin{width:100%;border-collapse:collapse;font-size:var(--t-2)}
+.tab-assin th{text-align:left;font-size:var(--t-1);letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-2);padding:6px 8px;border-bottom:1px solid var(--linha)}
+.tab-assin td{padding:10px 8px;border-bottom:1px dashed var(--linha);vertical-align:top}
+.tab-assin td .seg{display:block;font-size:var(--t-1);color:var(--cinza-2)}
+/* v8.1 — a lista de presença na reunião de aprovação */
+.presenca-linha{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+.presenca-linha:hover{border-color:var(--azul-medio)}
+.presenca-linha input{position:absolute;opacity:0;pointer-events:none}
+.presenca-linha .bx{width:20px;height:20px;border-radius:5px;flex:0 0 auto;margin-top:2px;
+  border:1.5px solid var(--linha-forte);background:var(--papel);position:relative;transition:all .15s}
+.presenca-linha .bx svg{position:absolute;inset:2px;width:auto;height:auto;opacity:0;color:var(--papel);transition:opacity .15s}
+.presenca-linha:has(input:checked){border-color:var(--azul-inst);background:var(--azul-gelo)}
+.presenca-linha:has(input:checked) .bx{background:var(--azul-inst);border-color:var(--azul-inst)}
+.presenca-linha:has(input:checked) .bx svg{opacity:1}
+.presenca-linha:has(input:disabled){cursor:default;background:var(--ok-tinta);border-color:var(--ok-borda)}
+.presenca-linha:has(input:disabled) .bx{background:var(--ok);border-color:var(--ok)}
+.presenca-linha .tx{font-size:var(--t-3);min-width:0}
+.presenca-linha .sub-linha{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:2px}
+.barra-assin{height:6px;border-radius:999px;background:var(--azul-gelo);overflow:hidden;margin:12px 0 6px}
+.barra-assin span{display:block;height:100%;background:var(--ok);transition:width .3s}
+.trava-ribbon{background:var(--azul-inst);color:var(--sobre-azul);font-size:var(--t-1);text-align:center;padding:8px 16px}
+.trava-ribbon b{color:var(--papel)}
+.somente-leitura input,.somente-leitura textarea,.somente-leitura select{background:var(--fundo);color:var(--cinza-2);cursor:not-allowed}
+.somente-leitura .opt{opacity:.7;cursor:not-allowed}
+@media (max-width:700px){
+  .membro-linha,.membro-cab{grid-template-columns:1fr}
+  .membro-cab{display:none}
+  .membro-linha{border:1px solid var(--linha);border-radius:var(--raio);padding:10px;background:var(--papel-2)}
+  .membro-linha .rm{width:100%}
+}
+.foot{text-align:center;color:var(--cinza-2);font-size:var(--t-1);padding:24px 20px 40px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:0;z-index:99;background:var(--papel);color:var(--azul-inst);padding:10px 16px;border-radius:0 0 8px 0;font-size:var(--t-3);font-weight:600;text-decoration:none}
+.skip:focus{left:0}
+
+/* v9.0 (M02): a escala de texto não muda com a largura da tela — só a medida.
+   O bloco de tamanhos fracionários para telas largas saiu; fica apenas a
+   escala da prévia do documento, que é medida de tela e não tipografia da
+   interface (teste-paginacao.js confere o papel, não este valor). */
+@media (min-width:1400px){
+  .form-panel{padding:34px 40px 38px}
+  .form-panel .lead{max-width:70ch}
+  .form-body p,.lista-mark li,.video-pauta p,.card-encerra p,.card-versao p,.cur-grupo-nota{max-width:74ch}
+  .hint,.tarefa .intro,.perguntas li{max-width:72ch}
+  .declara span.tx{max-width:76ch}
+  /* v9.1: saiu a regra que dava 12,8 px à prévia lateral — a prévia lateral
+     era desenhada em 12,8 px sobre folhas medidas em 12 pt (16 px): a
+     linha quebrava em lugar diferente do papel e sobrava um vão no pé de
+     cada folha. A prévia é a folha medida, reduzida por transform
+     (ajustarEscalaDoc), e não uma folha com outra letra. */
+}
+@media (max-width:1440px){
+  .mod-btn{padding:10px 8px 8px}
+}
+@media (max-width:1180px){
+  .stage{grid-template-columns:1fr;max-width:800px;margin:0 auto}
+  .col-doc{position:static;height:auto;order:2}
+  .docwrap--mini{max-height:70vh}
+  .paper{padding:26px 24px 32px}
+  .form-panel .lead{max-width:70ch}
+  .form-body p,.lista-mark li,.video-pauta p{max-width:76ch}
+  .hint,.tarefa .intro,.card-encerra p,.card-versao p{max-width:74ch}
+  .perguntas li{max-width:72ch}
+}
+@media (max-width:640px){
+  .btn-mapa span{display:none}
+  .trilha-linha{padding:0 10px}
+  .trilha-inner{gap:6px}
+  .mapa-tela .tp{display:none}
+  .grid-fields,.opts,.compare,.ex-par{grid-template-columns:1fr}
+  .panel,.form-panel{padding:20px 18px 24px}
+  .paper{padding:22px 16px 28px}
+  .top-inner{padding:10px 14px}
+  .brand-t span{display:none}
+  .brand-t strong{font-size:var(--t-3)}
+  .btn-topo{padding:8px 10px}
+  .mark{width:36px;height:36px;font-size:var(--t-1)}
+  .demo-ribbon,.acesso-ribbon,.trava-ribbon{font-size:var(--t-1);padding:5px 12px}
+  .wrap{padding:18px 14px 80px}
+  .nav-row{display:flex;flex-direction:column-reverse;align-items:stretch}
+  .nav-right{display:flex;flex-direction:column-reverse;gap:10px}
+  .nav-row .btn{width:100%;justify-content:center}
+}
+/* --- Curadoria de conteúdo (Órgão Central) --- */
+.ov-cur{padding:0;align-items:stretch;background:var(--fundo);overflow:hidden}
+.cur{background:var(--fundo);width:100%;display:flex;flex-direction:column;height:100vh}
+.cur-top{background:var(--azul-profundo);color:var(--papel);display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:12px 22px;flex-wrap:wrap;flex:0 0 auto}
+.cur-top strong{font-family:var(--fonte-titulo);font-size:var(--t-3);display:block}
+.cur-top .sub{font-size:var(--t-1);color:var(--sobre-azul);display:block;margin-top:2px}
+.cur-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cur-acoes input{font-family:var(--fonte);font-size:var(--t-2);border:1px solid rgba(255,255,255,.25);
+  border-radius:var(--raio);padding:8px 11px;background:rgba(255,255,255,.10);color:var(--papel);width:190px}
+.cur-acoes input::placeholder{color:var(--sobre-azul)}
+.cur-acoes input:focus{outline:none;border-color:var(--sobre-azul);background:rgba(255,255,255,.16)}
+.cur-btn{border-radius:var(--raio);padding:9px 15px;font-size:var(--t-2);font-weight:600;border:1px solid rgba(255,255,255,.3);
+  background:transparent;color:var(--papel);font-family:inherit}
+.cur-btn:hover{background:rgba(255,255,255,.12)}
+.cur-btn.forte{background:var(--papel);color:var(--azul-profundo);border-color:var(--papel)}
+.cur-btn.forte:hover{background:var(--azul-gelo)}
+.cur-btn[disabled]{opacity:.45;cursor:not-allowed}
+.cur-corpo{display:grid;grid-template-columns:250px 1fr;gap:0;flex:1;min-height:0}
+.cur-nav{background:var(--papel);border-right:1px solid var(--linha);padding:16px 12px 40px;overflow-y:auto}
+.cur-nav button{display:block;width:100%;text-align:left;background:none;border:none;border-radius:var(--raio);
+  padding:9px 12px;font-size:var(--t-2);color:var(--grafite);font-family:inherit;margin-bottom:2px}
+.cur-nav button:hover{background:var(--azul-gelo)}
+.cur-nav button.on{background:var(--azul-gelo);color:var(--azul-profundo);font-weight:600}
+.cur-nav .n{float:right;font-size:var(--t-1);color:var(--cinza-2);font-variant-numeric:tabular-nums}
+.cur-nav button.on .n{color:var(--azul-medio)}
+.cur-campos{padding:22px 26px 60px;min-width:0;overflow-y:auto}
+.cur-campos>*{max-width:940px}
+.cur-grupo-tit{font-family:var(--fonte-titulo);font-size:var(--t-4);color:var(--azul-profundo);margin-bottom:4px}
+.cur-grupo-nota{font-size:var(--t-2);color:var(--cinza-2);max-width:68ch;margin-bottom:20px}
+.cur-campo{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio);padding:14px 16px;margin-bottom:12px}
+.cur-campo.rascunho{background:var(--alerta-tinta)}
+.cur-rot{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.cur-rot b{font-size:var(--t-2)}
+.cur-onde{font-size:var(--t-1);letter-spacing:.05em;text-transform:uppercase;color:var(--cinza-2)}
+.cur-campo textarea,.cur-campo input[type=text]{width:100%;font-family:var(--fonte);font-size:var(--t-2);
+  line-height:1.6;color:var(--grafite);border:1px solid var(--linha);border-radius:var(--raio);padding:10px 12px;
+  background:var(--papel-2);resize:vertical}
+.cur-campo textarea:focus,.cur-campo input:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);
+  box-shadow:var(--anel)}
+.cur-campo .lista-nota{font-size:var(--t-1);color:var(--cinza-2);margin-bottom:6px}
+.cur-pe{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:7px;flex-wrap:wrap}
+.cur-pe .cnt{font-size:var(--t-1);color:var(--cinza-2);font-variant-numeric:tabular-nums}
+/* v8.13 (E04): as regras de .cur-login e .cur-erro saíram junto com o segundo
+   login do Órgão Central, que não existe mais — a entrada é uma só. */
+/* v8.13 (E07): a marca do rascunho de OUTRO curador */
+.cur-nav .n.outro{background:var(--alerta-borda);color:var(--alerta)}
+/* v8.13 (E06): a caixa da prévia do texto do servidor (e-mail e folha) */
+.cur-previa-cx{border:1px solid var(--linha);border-radius:var(--raio);padding:14px 16px;
+  background:var(--papel);font-size:var(--t-2);line-height:1.55;max-height:46vh;overflow:auto}
+.cur-previa-cx pre{white-space:pre-wrap;font-family:inherit;margin:0}
+/* v9.0 (M21): .cur-aviso estava declarada duas vezes com valores diferentes; ficou uma */
+.cur-aviso{margin-bottom:18px;max-width:68ch}
+#curAvisoResolucao{margin:0 22px 14px;max-width:none}
+.cur-hist{font-size:var(--t-2);color:var(--cinza-2)}
+.cur-hist table{width:100%;border-collapse:collapse;margin-top:8px}
+.cur-hist th{text-align:left;font-size:var(--t-1);letter-spacing:.05em;text-transform:uppercase;color:var(--cinza-2);
+  padding:6px 8px;border-bottom:1px solid var(--linha)}
+.cur-hist td{padding:8px;border-bottom:1px dashed var(--linha);vertical-align:top;font-size:var(--t-1)}
+.cur-itens{display:flex;flex-direction:column;gap:8px}
+.cur-item{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:start}
+.cur-item .full{grid-column:1 / -1}
+.cur-mini{justify-self:end}
+.cur-item i{color:var(--alerta);font-style:normal;font-size:var(--t-1)}
+.cur-previa-fita{background:var(--alerta);color:var(--alerta-tinta);font-size:var(--t-1);text-align:center;padding:6px 16px}
+@media (max-width:900px){
+  .cur-corpo{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .cur-nav{border-right:none;border-bottom:1px solid var(--linha);
+    display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:10px}
+  .cur-nav button{width:auto;white-space:nowrap}
+  .cur-nav .n{float:none;margin-left:6px}
+  .cur-campos{padding:18px 14px 50px}
+  .cur-acoes input{width:100%}
+}
+
+/* --- Portas de acesso na abertura --- */
+.portas{display:flex;flex-direction:column;gap:9px;margin:4px 0 16px}
+.porta{display:block;width:100%;min-height:76px;text-align:left;background:var(--papel);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:16px;font-family:inherit;transition:border-color .15s,background .15s}
+.porta:hover{border-color:var(--azul-medio);background:var(--azul-gelo)}
+.porta .pt{display:block;font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-3);color:var(--azul-profundo)}
+.porta .pd{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:3px}
+.land-voltar,.land-link{min-height:var(--toque)}
+.land-voltar{margin:0 0 12px -8px}
+.land-passo h4{font-family:var(--fonte-titulo);font-size:var(--t-3);color:var(--azul-profundo);margin-bottom:4px}
+.land-passo .sub{margin-bottom:14px}
+.land-passo .field{margin-bottom:12px}
+.land-passo .field label{font-size:var(--t-1);font-weight:600;display:block;margin-bottom:5px}
+.land-passo .field input{width:100%;font-family:var(--fonte);font-size:var(--t-3);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:11px 12px;background:var(--papel-2);color:var(--grafite)}
+.land-passo .field input:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+.land-passo .field .dica,.gs-form .dica{margin-top:4px;display:block}
+
+/* --- Painel institucional (Órgão Central e Regional) --- */
+.pi-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.pi-cab h2{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-5);color:var(--azul-profundo);line-height:1.25}
+.pi-cab .hint{margin-bottom:0}
+/* v9.0 (M07): a barra do painel ganha hierarquia — um primário (#piNovo, que
+   ajustarBotaoNovo alterna), um secundário com lápis (#piEditar) e três
+   terciários com ícone (baixar, atualizar, sair). No celular, duas colunas,
+   com os terciários em caixa para parecerem toque. */
+.pi-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pi-acoes .btn.btn-link{min-height:var(--toque);padding:8px 12px;font-size:var(--t-2)}
+@media (max-width:760px){
+  .pi-acoes{width:100%}
+  .pi-acoes .btn{flex:1 1 calc(50% - 4px);justify-content:center}
+  .pi-acoes .btn.btn-link{background:var(--papel);border:1px solid var(--linha)}
+}
+/* v9.0 (M29): o resumo do Órgão Central monta um quadro dentro de #piTabela, que já é .pi-tabela */
+.pi-tabela .pi-tabela{border:none;border-radius:0}
+#piTabela>.hint{padding:12px 14px 0}
+/* v7.3 (T-18): as abas quebram linha em vez de estourar a largura da página */
+.pi-abas{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--linha);margin-bottom:18px;max-width:100%}
+.pi-abas button{background:none;border:none;border-bottom:3px solid transparent;padding:10px 14px;min-height:var(--toque);
+  font-family:inherit;font-size:var(--t-2);font-weight:600;color:var(--cinza-2);white-space:nowrap}
+.pi-abas button.on{color:var(--azul-inst);border-bottom-color:var(--azul-inst)}
+/* v9.0 (M08): no celular as abas rolam na horizontal numa linha só (eram
+   quatro linhas); o degradê à direita avisa que há mais. A regra base com
+   flex-wrap:wrap fica — é ela que o computador usa. */
+@media (max-width:760px){
+  .pi-abas{position:relative;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -16px 18px;padding:0 16px}
+  .pi-abas::-webkit-scrollbar{display:none}
+  .pi-abas button{min-height:var(--toque);padding:10px 12px;font-size:var(--t-2)}
+  /* o degradê é um filho "sticky" no fim da fila: acompanha a rolagem sem precisar de embrulho no markup */
+  .pi-abas::after{content:'';position:sticky;right:0;flex:0 0 24px;align-self:stretch;pointer-events:none;
+    background:linear-gradient(90deg,rgba(237,240,244,0),var(--fundo))}
+}
+.pi-resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.pi-card{position:relative;background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio);padding:12px 14px}
+.pi-card .n{font-family:var(--fonte-titulo);font-weight:700;font-size:var(--t-5);color:var(--azul-profundo);
+  font-variant-numeric:tabular-nums;display:block}
+.pi-card .r{font-size:var(--t-1);letter-spacing:.05em;text-transform:uppercase;color:var(--cinza-2);margin-top:2px;display:block}
+/* v7.7 (P5): cartão que abre a fila de validação; quadro das regionais */
+/* v9.0 (M09): o cartão que abre a fila ganha a seta no canto — "abrir a fila"
+   sem afford era só texto. Sem cor nos cartões (.pendente/.destaque seguem
+   sem regra, de propósito); só "revisão vencida" fica no vermelho. */
+button.pi-card{cursor:pointer;font-family:inherit;text-align:left;width:100%;padding-right:32px;transition:border-color .15s}
+button.pi-card:hover{border-color:var(--azul-medio)}
+button.pi-card::after{content:'';position:absolute;right:10px;top:50%;width:16px;height:16px;margin-top:-8px;background:var(--azul-inst);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3.5 10.5 8 6 12.5'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3.5 10.5 8 6 12.5'/%3E%3C/svg%3E") center/contain no-repeat}
+.pi-card .r small{display:block;text-transform:none;letter-spacing:0;font-size:var(--t-1);margin-top:2px}
+@media (max-width:760px){
+  .pi-resumo{grid-template-columns:1fr 1fr;gap:8px}
+  .pi-card{padding:10px 12px}
+  .pi-card .n{font-size:var(--t-4)}
+  .pi-card .r small{display:none}
+}
+.quadro-sre tbody tr{cursor:pointer}
+.quadro-sre tbody tr:hover td{background:var(--azul-gelo)}
+.quadro-sre td.num,.quadro-sre th.num{text-align:right;font-variant-numeric:tabular-nums}
+/* v9.0 (M10): onze colunas no quadro das regionais — o cabeçalho pode quebrar linha, senão a coluna "ver" sai da caixa */
+.pi-tabela .quadro-sre th{white-space:normal;line-height:1.3}
+.quadro-sre td:last-child{white-space:nowrap}
+.quadro-sre .pi-acao{padding:4px 6px}
+.quadro-sre td.num:empty{color:var(--cinza-2)}
+/* v7.8 (P8): linha do tempo */
+/* v9.0 (M13): a rolagem fica no diálogo, não na lista — o overflow:auto
+   cortava ao meio o ponto que fica fora da caixa (a -19 px). */
+.linha-tempo{list-style:none;margin:4px 0 0 6px;padding:0 0 0 18px;border-left:2px solid var(--azul-tinta)}
+.linha-tempo li{position:relative;padding:0 0 12px 14px;font-size:var(--t-2)}
+.linha-tempo li::before{content:'';position:absolute;left:-23px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--azul-inst)}
+.linha-tempo .lt-data{display:block;font-size:var(--t-1);color:var(--cinza-2);font-variant-numeric:tabular-nums}
+.linha-tempo .lt-ato{display:block;font-weight:600;color:var(--azul-profundo)}
+.linha-tempo .lt-quem{display:block;font-size:var(--t-1);color:var(--cinza-2)}
+.linha-tempo .lt-det{display:block;font-size:var(--t-1);color:var(--grafite);margin-top:2px;white-space:pre-wrap}
+.pi-filtros{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.pi-filtros.quatro{grid-template-columns:2fr 1fr 1fr 1fr}
+.pi-filtros.uma{grid-template-columns:minmax(0,280px)}
+.pi-filtros input,.pi-filtros select{font-family:var(--fonte);font-size:var(--t-3);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:10px 12px;background:var(--papel-2);color:var(--grafite);width:100%}
+.pi-filtros input:focus,.pi-filtros select:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+.pi-tabela{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio-g);overflow:hidden}
+.pi-scroll{overflow-x:auto}
+.pi-tabela table{width:100%;border-collapse:collapse;font-size:var(--t-2);min-width:900px}
+.pi-tabela th{text-align:left;font-size:var(--t-1);letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-2);
+  padding:11px 14px;border-bottom:1px solid var(--linha);background:var(--papel-2);white-space:nowrap}
+/* v9.0 (M10): divisória sólida (o tracejado em 500 linhas vira textura), hover
+   gelo, ações em linha sem sublinhado. O cabeçalho NÃO é fixo (R34). */
+.pi-tabela td{padding:10px 14px;border-bottom:1px solid var(--linha);vertical-align:middle}
+.pi-tabela tr:last-child td{border-bottom:none}
+.pi-tabela tbody tr:hover td{background:var(--azul-gelo)}
+.pi-tabela td.linha-acoes{white-space:nowrap;padding-left:8px}
+.pi-tabela .linha-acoes .pi-acao{padding:4px 6px;min-height:32px}
+.pi-tabela .esc{font-weight:600;display:block}
+.pi-tabela .mun{font-size:var(--t-1);color:var(--cinza-2);display:block;margin-top:1px}
+.pi-tabela .proto{font-family:ui-monospace,Menlo,monospace;font-size:var(--t-1);color:var(--cinza-2);white-space:nowrap}
+/* ==========================================================
+   v9.0 (M05) — VAZIO, CARREGANDO E ERRO SÃO TRÊS ESTADOS, NÃO UM.
+   .pi-vazio (texto solto, 47 usos) e .vazio-aviso (caixa tracejada) viram
+   um molde: caixa tracejada, texto centrado. .carregando acrescenta o ícone
+   "atualizar" girando (parado quando a pessoa pede menos movimento); .erro
+   acrescenta o ícone de erro e a borda no vermelho. O ícone entra por
+   máscara CSS, para o JS só precisar da classe. Cabe em célula de tabela e
+   em cartão: a margem lateral é automática só quando há espaço.
+   ========================================================== */
+.pi-vazio,.vazio-aviso{display:block;border:1px dashed var(--linha-forte);border-radius:var(--raio);padding:28px 20px;margin:8px auto;
+  text-align:center;color:var(--cinza-2);font-size:var(--t-2);line-height:1.5;max-width:60ch;background:var(--papel)}
+.pi-tabela>.pi-vazio,.pi-scroll>.pi-vazio{margin:16px auto}
+.pi-vazio.carregando::before,.pi-vazio.erro::before{content:'';display:block;width:20px;height:20px;margin:0 auto 10px;background:currentColor;
+  -webkit-mask:var(--ico-mask) center/contain no-repeat;mask:var(--ico-mask) center/contain no-repeat}
+.pi-vazio.carregando{--ico-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 8A5 5 0 1 1 11.6 4.5'/%3E%3Cpath d='M13 2.6v3.2H9.8'/%3E%3C/svg%3E")}
+.pi-vazio.carregando::before{color:var(--azul-inst);animation:giraIco 1.2s linear infinite}
+.pi-vazio.erro{--ico-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.3'/%3E%3Cpath d='M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4'/%3E%3C/svg%3E");
+  border-color:var(--erro);border-style:solid;color:var(--grafite)}
+.pi-vazio.erro::before{color:var(--erro)}
+@keyframes giraIco{to{transform:rotate(360deg)}}
+.pi-barra{height:5px;border-radius:999px;background:var(--azul-gelo);overflow:hidden;width:78px}
+.pi-barra span{display:block;height:100%;background:var(--azul-medio)}
+.pi-pct{font-size:var(--t-1);color:var(--cinza-2);font-variant-numeric:tabular-nums;margin-top:3px;display:block}
+/* v7.3 (T-07): o parecer da devolução, na linha do PPP e no percurso */
+.tr-parecer td{padding-top:0;border-top:none}
+.tr-parecer + tr td{border-top:1px solid var(--linha)}
+.pi-parecer{margin-top:0;padding:10px 14px;border-radius:0 var(--raio) var(--raio) 0;white-space:normal;max-width:110ch}
+.pi-parecer details{margin-top:6px}
+.pi-parecer summary{cursor:pointer;font-size:var(--t-1);color:var(--azul-medio)}
+.pi-parecer p{margin:6px 0 0;font-size:var(--t-1)}
+.parecer-devolucao{margin-bottom:18px}
+.pi-card.vencida .n{color:var(--erro)}
+.acesso-linha{display:grid;grid-template-columns:2fr 1.6fr 1.4fr 1fr auto;gap:10px;align-items:center;
+  padding:11px 0;border-bottom:1px dashed var(--linha);font-size:var(--t-2)}
+.acesso-linha:last-child{border-bottom:none}
+.acesso-linha .sub-linha{display:block;font-size:var(--t-1);color:var(--cinza-2);margin-top:2px}
+.acesso-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.acesso-form .field{display:flex;flex-direction:column;gap:5px}
+.acesso-form .field.full{grid-column:1 / -1}
+.acesso-form label{font-size:var(--t-1);font-weight:600}
+.acesso-form input,.acesso-form select{font-family:var(--fonte);font-size:var(--t-3);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:10px 12px;background:var(--papel-2);color:var(--grafite)}
+.acesso-form input:focus,.acesso-form select:focus{outline:none;border-color:var(--azul-medio);background:var(--papel);box-shadow:var(--anel)}
+
+/* --- Modo edição de textos --- */
+.barra-edicao{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--azul-profundo);color:var(--papel);
+  display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap;box-shadow:var(--sombra)}
+.barra-edicao .be-tag{font-family:var(--fonte-titulo);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;background:rgba(255,255,255,.16);border-radius:999px;padding:4px 11px}
+.barra-edicao #beInfo{font-size:var(--t-2);color:var(--sobre-azul);flex:1;min-width:180px}
+.barra-edicao #beInfo b{color:var(--papel)}
+.be-acoes{display:flex;gap:8px;flex-wrap:wrap}
+body.modo-edicao{padding-bottom:var(--barra-h, 72px)}
+.be-acoes .sm{display:none}
+@media (max-width:760px){
+  .barra-edicao{padding:8px 10px;gap:6px}
+  .barra-edicao #beInfo{font-size:var(--t-1);flex-basis:100%;order:3;margin-top:2px}
+  .be-acoes{flex:1;justify-content:space-between;gap:5px;width:100%}
+  .be-acoes .cur-btn{padding:8px 9px;font-size:var(--t-1);flex:1;justify-content:center}
+  .be-acoes .lg{display:none}
+  .be-acoes .sm{display:inline}
+}
+body.modo-edicao [data-cur]{outline:1px dashed rgba(46,83,149,.32);outline-offset:3px;border-radius:3px;
+  cursor:text;transition:background .12s}
+body.modo-edicao [data-cur]:hover{background:rgba(255,222,120,.30);outline-color:var(--azul-inst)}
+body.modo-edicao [data-cur]:not([data-inline]):hover{background:rgba(46,83,149,.10);cursor:pointer}
+body.modo-edicao [data-cur].editando{background:var(--alerta-tinta);outline:2px solid var(--azul-inst);outline-offset:3px;
+  box-shadow:0 0 0 4px rgba(46,83,149,.10)}
+body.modo-edicao [data-cur].alterado-agora{background:rgba(31,122,85,.10);outline-color:var(--ok)}
+.ed-exemplo{border-left:3px solid var(--azul-tinta);background:var(--papel-2);border-radius:0 var(--raio) var(--raio) 0;
+  padding:9px 12px;margin-top:10px}
+.ed-exemplo .ed-rot{font-size:var(--t-1);font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--azul-medio);display:block;margin-bottom:4px}
+.ed-exemplo p{font-size:var(--t-2);color:var(--cinza-2);margin:0}
+.ed-dica{position:fixed;bottom:118px;left:50%;transform:translateX(-50%);background:var(--grafite);color:var(--papel);
+  font-size:var(--t-1);padding:7px 14px;border-radius:var(--raio);z-index:71;pointer-events:none}
+@media (max-width:760px){
+  /* no celular a tabela vira lista de cartões: nada de rolagem lateral */
+  .pi-tabela{border:none;background:none;border-radius:0}
+  .pi-tabela table,.pi-tabela tbody,.pi-tabela tr,.pi-tabela td{display:block;width:auto;min-width:0}
+  .pi-tabela thead{display:none}
+  .pi-tabela tr{background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio-g);
+    padding:14px 16px;margin-bottom:10px}
+  .pi-tabela td{border:none;padding:3px 0}
+  .pi-tabela tr:hover td{background:none}
+  .pi-tabela td[data-r]::before{content:attr(data-r);display:block;font-size:var(--t-1);letter-spacing:.06em;
+    text-transform:uppercase;color:var(--cinza-2);margin-bottom:2px}
+  .pi-tabela td.linha-acoes{margin-top:10px;padding-top:10px;border-top:1px dashed var(--linha)}
+  .pi-barra{width:100%}
+}
+@media (max-width:800px){
+  .pi-filtros,.pi-filtros.quatro{grid-template-columns:1fr}
+  .acesso-linha{grid-template-columns:1fr;gap:4px}
+  .acesso-form{grid-template-columns:1fr}
+}
+
+/* v8.8 (G1): a tabela de documentos da regional e do Órgão Central */
+.pi-tabela table.tab-gestao{min-width:760px}
+.tab-gestao .col-escola{min-width:270px;width:38%}
+.tab-gestao th:last-child,.tab-gestao td:last-child{width:14%}
+.tab-gestao td.col-escola .proto{font-family:ui-monospace,Menlo,monospace;font-size:var(--t-1);letter-spacing:0}
+.acoes-menu{display:inline-block;position:relative}
+.acoes-menu>summary{cursor:pointer;list-style:none;font-size:var(--t-2);font-weight:600;color:var(--azul-inst);
+  border:none;border-radius:var(--raio);padding:4px 6px;min-height:32px;display:inline-flex;
+  align-items:center;gap:4px;white-space:nowrap;background:none}
+.acoes-menu>summary::-webkit-details-marker{display:none}
+.acoes-menu>summary .ico{transition:transform .15s}
+.acoes-menu>summary:hover,.acoes-menu>summary:focus-visible{background:var(--azul-gelo);text-decoration:underline}
+.acoes-menu[open]>summary{background:var(--azul-gelo);color:var(--azul-profundo)}
+.acoes-menu[open]>summary .ico{transform:rotate(180deg)}
+.acoes-menu-lista{position:absolute;right:0;z-index:5;min-width:210px;background:var(--papel);border:1px solid var(--linha);
+  border-radius:var(--raio);box-shadow:var(--sombra);padding:6px;display:flex;flex-direction:column;gap:2px}
+.acoes-menu-lista .pi-acao{display:flex;width:100%;text-align:left;padding:9px 10px;min-height:40px;border-radius:var(--raio);margin:0}
+.acoes-menu-lista .pi-acao:hover{background:var(--azul-gelo);text-decoration:none}
+.acoes-menu-lista .pi-acao.muda{font-weight:700;color:var(--azul-profundo)}
+/* v9.5: dentro do menu, a ação em destaque ("homologar", "validar") saía
+   com o fundo azul do primário e a TINTA azul-escura do item de menu —
+   texto escuro sobre fundo escuro. No menu ela é um item claro, com o
+   fundo gelo marcando o destaque; o ícone de alerta já diz que muda a
+   situação. */
+.acoes-menu-lista .pi-acao.forte,.acoes-menu-lista .pi-acao.forte.muda{background:var(--azul-gelo);color:var(--azul-profundo);justify-content:flex-start;text-align:left}
+.acoes-menu-lista .pi-acao.forte:hover,.acoes-menu-lista .pi-acao.forte:focus-visible{background:var(--azul-tinta);color:var(--azul-profundo)}
+.acoes-menu-lista .pi-acao.muda .ico{width:12px;height:12px;color:var(--alerta)}
+@media (max-width:760px){
+  .pi-tabela table.tab-gestao{min-width:0}
+  .tab-gestao .col-escola{min-width:0;width:auto}
+  /* v9.2: a coluna de ações tinha 14% de largura também no cartão do
+     celular — a regra vinha depois da que vira cartão e vencia. As ações
+     ocupam a largura toda; o protocolo em monoespaçada quebra em vez de
+     sair do cartão. */
+  .tab-gestao th:last-child,.tab-gestao td:last-child{width:auto}
+  .pi-tabela .proto,.tab-gestao td.col-escola .proto{white-space:normal;overflow-wrap:anywhere}
+  .acoes-menu,.acoes-menu>summary{display:flex;width:100%;text-align:left;min-height:var(--toque)}
+  .acoes-menu{flex-direction:column}   /* v9.5: a lista abre ABAIXO de "Ações", não ao lado */
+  .acoes-menu-lista{position:static;box-shadow:none;border:none;padding:6px 0 0}
+}
+
+/* v8.8 (F3): no celular a tabela de indicadores vira um cartão por etapa —
+   seis colunas em rolagem lateral, sem a etapa à vista, eram ilegíveis */
+@media (max-width:760px){
+  .ind-scroll{overflow-x:visible}
+  .ind-tabela,.ind-tabela tbody,.ind-tabela tr,.ind-tabela td{display:block;width:auto}
+  .ind-tabela thead{display:none}
+  .ind-tabela tr{border:1px solid var(--linha);border-radius:var(--raio);padding:10px 12px;margin-bottom:10px;background:var(--papel)}
+  .ind-tabela td{border:none;display:flex;align-items:center;gap:10px;padding:4px 0;text-align:left}
+  .ind-tabela td.et{display:block;font-size:var(--t-3);background:none;padding:0 0 6px;border-bottom:1px dashed var(--linha);margin-bottom:6px}
+  .ind-tabela td[data-r]::before{content:attr(data-r);flex:1 1 auto;font-size:var(--t-1);letter-spacing:.04em;
+    text-transform:uppercase;color:var(--cinza-2)}
+  .ind-tabela td input{flex:0 0 42%;text-align:right;min-height:40px}
+}
+
+/* v8.8 (F1): o exemplo de preenchimento, recolhido, abaixo do campo */
+/* v8.14: a caixa "Ver um exemplo de preenchimento" saiu da tela da escola.
+   O estilo foi retirado junto — regra sem uso envelhece mal. */
+
+/* v8.8 (F2): a conferência final, por módulo, com cada item levando à tela */
+.check-mod{border:1px solid var(--linha);border-radius:var(--raio);margin-bottom:8px;background:var(--papel)}
+.check-mod>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:11px 14px;font-size:var(--t-2);font-weight:600;color:var(--azul-inst);min-height:44px}
+.check-mod>summary::-webkit-details-marker{display:none}
+/* v9.0 (M25): o marcador do módulo é a seta, que gira quando o bloco abre */
+.check-mod>summary .ico{flex:0 0 auto;color:var(--cinza-2);transition:transform .15s}
+.check-mod[open]>summary .ico{transform:rotate(180deg)}
+.check-mod>summary .ck-tag{margin-left:auto}
+.check-mod .check-item{padding:8px 14px}
+button.check-link{display:flex;width:100%;text-align:left;background:none;border:none;font-family:inherit;
+  font-size:inherit;font-weight:400;line-height:inherit;color:inherit;cursor:pointer;border-radius:var(--raio);min-height:0}
+button.check-link:hover{background:var(--azul-gelo);text-decoration:none;color:inherit}
+button.check-link:focus-visible{outline:2px solid var(--azul-medio);outline-offset:-2px}
+
+/* v8.7 (D1 e D2): o contador do campo e a tarja de gravação falhando */
+.contador.perto{color:var(--alerta);font-weight:600}
+.contador.estourou{color:var(--erro);font-weight:700;text-align:left}
+.tarja-salvar{position:fixed;left:0;right:0;bottom:0;z-index:72;align-items:center;flex-wrap:wrap;border-radius:0;
+  border-width:1px 0 0;padding:10px 16px;box-shadow:var(--sombra)}
+.tarja-salvar span{flex:1 1 260px;min-width:0}
+.tarja-salvar .btn{flex:0 0 auto;padding:7px 14px;font-size:var(--t-1);min-height:40px}
+@media (max-width:560px){.tarja-salvar{font-size:var(--t-1);padding:9px 12px}.tarja-salvar .btn{width:100%}}
+
+/* ==========================================================
+   v8.6 — bloco 5: celular e acessibilidade
+   ========================================================== */
+/* E2 · o documento em tela cheia é como o Colegiado lê antes de assinar */
+.doc-sumario{max-width:1120px;margin:0 auto 10px;background:var(--papel);border:1px solid var(--linha);border-radius:var(--raio)}
+.doc-sumario>summary{cursor:pointer;list-style:none;padding:11px 16px;font-size:var(--t-2);font-weight:600;
+  color:var(--azul-inst);display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.doc-sumario>summary::-webkit-details-marker{display:none}
+.doc-sumario>summary::after{content:'▾';font-size:var(--t-1);color:var(--cinza-2)}
+.doc-sumario[open]>summary::after{content:'▴'}
+.doc-sumario nav{display:flex;flex-direction:column;border-top:1px solid var(--linha);max-height:46vh;overflow-y:auto}
+.doc-sum-item{background:none;border:none;border-bottom:1px dashed var(--linha);text-align:left;
+  font-family:inherit;font-size:var(--t-2);color:var(--grafite);padding:11px 16px;min-height:44px;cursor:pointer}
+.doc-sum-item:last-child{border-bottom:none}
+.doc-sum-item:hover{background:var(--azul-gelo);color:var(--azul-inst)}
+#docFull h3.doc-h{scroll-margin-top:12px}
+/* v9.6: o histórico embutido na caixa de cadastro de cada categoria */
+.hist-embutido{margin-top:14px;border-top:1px dashed var(--linha);padding-top:8px}
+.hist-embutido>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;
+  font-size:var(--t-2);font-weight:600;color:var(--azul-inst);padding:4px 6px;border-radius:var(--raio)}
+.hist-embutido>summary::-webkit-details-marker{display:none}
+.hist-embutido>summary:hover,.hist-embutido>summary:focus-visible{background:var(--azul-gelo);text-decoration:underline}
+.hist-embutido>summary .ico{transition:transform .15s}
+.hist-embutido[open]>summary .ico{transform:rotate(180deg)}
+.hist-embutido .hist-corpo{margin-top:6px}
+
+@media (max-width:640px){
+  /* v9.1: o documento é JUSTIFICADO em toda tela, como no papel. A regra
+     que aqui alinhava o texto à esquerda vinha de antes da folha A4 (v8.9),
+     quando o documento era uma coluna estreita; hoje a folha tem sempre
+     165 mm de texto, reduzida por transform, e a justificação é a do
+     Padrão Ofício. Fica só o respiro da folha no celular. */
+  .docwrap--full .paper{padding:22px 16px 30px}
+  .overlay.ov-doc{padding:0}
+  .ov-doc-inner{padding:12px 10px 32px}
+  /* E6 · o mapa do percurso: título e estado empilhados, alinhados à esquerda */
+  .mapa-tela{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;
+    text-align:left;padding:10px 12px}
+  .mapa-tela>span:nth-child(3){grid-column:2;text-align:left}
+  .mapa-tela .tp{grid-column:2;min-width:0}
+  .mapa-tela .n{grid-row:1 / span 2}
+  .mapa-tela .st{grid-column:2;margin-left:0;margin-top:3px;white-space:normal}
+}
+
+/* E3 e E4 · as ações do cartão, no celular, uma por linha e com área de toque */
+@media (max-width:760px){
+  .pi-tabela td.linha-acoes{display:flex;flex-direction:column;align-items:stretch;gap:8px;white-space:normal}
+  .eq-acoes{flex-direction:column;align-items:stretch;gap:8px}
+  .eq-acoes .pi-acao{margin-left:0}
+  .linha-acoes .pi-acao,.eq-acoes .pi-acao{display:flex;width:100%;text-align:left;
+    min-height:44px;padding:6px 10px;font-size:var(--t-2)}
+  .linha-acoes .pi-acao.forte,.eq-acoes .pi-acao.forte{justify-content:center;text-align:center}
+  /* "assinar" é a única ação do membro do Colegiado: fica por último e em destaque */
+  .eq-acoes--assinar{margin-top:4px}
+}
+
+/* E1 · no celular, o aviso de alterações não salvas vira um ponto ao lado */
+@media (max-width:560px){
+  /* v9.2: o selo do perfil quebrava em duas linhas com a borda partida
+     (inline com raio de 999 px); como bloco, a borda envolve as duas */
+  .badge-proto{font-size:var(--t-1);padding:5px 10px;display:inline-block;border-radius:14px;line-height:1.35;text-align:center;letter-spacing:.06em}
+  .badge-aviso-tx{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .badge-aviso::after{content:'●';color:#F2C94C;font-size:var(--t-1)} /* v9.0: ponto sobre o azul escuro do cabeçalho; a tinta de alerta não tem contraste ali */
+}
+
+/* v9.0 (M23): abaixo de 760 px tudo o que se toca tem 44 px de altura
+   (medidos 174 alvos abaixo disso; .land-voltar tinha 15 px). */
+@media (max-width:760px){
+  input:not([type=checkbox]):not([type=radio]),select,textarea,.btn,.btn-link,.pi-abas button,.btn-topo,.btn-mapa,.doc-exp,
+  .zoom button,.ov-doc-zoom button,summary,.mod-btn,.cur-nav button,.cur-btn,.pi-acao,.acao-min,.cur-mini,.land-link,.land-voltar,
+  .video-pauta summary,.verif-assin summary,.acoes-menu>summary,.doc-sumario>summary,.check-mod>summary{min-height:var(--toque)}
+  .zoom button,.ov-doc-zoom button{width:var(--toque)}
+  .zoom{border-radius:var(--raio)}
+  .btn-sm{min-height:var(--toque)}
+}
+/* v10.0 — quem foi marcado como presente e ainda não assinou, no diálogo da
+   homologação. A homologação é definitiva: estas caixas ficam em branco no
+   documento final, e por isso a lista é nominal, não um número. */
+.lista-pendentes{list-style:none;margin:0 0 12px;padding:0;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+.lista-pendentes li{padding:8px 12px;font-size:var(--t-1);line-height:1.5;text-align:left}
+.lista-pendentes li + li{border-top:1px solid var(--linha)}
+.lista-pendentes .sub-linha{display:block;font-size:var(--t-2);color:var(--cinza-2);margin-top:2px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}html{scroll-behavior:auto}}
+</style>

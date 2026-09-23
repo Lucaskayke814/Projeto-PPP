@@ -1,0 +1,163 @@
+<style id="docCssFonte">
+/* ============================================================
+   DocCss — A FOLHA DE ESTILO DO DOCUMENTO (v8.13, D16)
+
+   Até a 8.12 a tipografia do documento existia em DOIS lugares: em
+   Css.html (com que a tela mede a paginação) e escrita à mão dentro do
+   Code.gs (com que o PDF é impresso). As duas divergiam em onze regras
+   que decidem onde a folha quebra — recuo da referência, altura da
+   assinatura, margem do título, espessura do filete —, e o resultado era
+   um documento com 21 folhas na tela e 20 no papel, com a última linha
+   de cada folha cortada em silêncio pelo overflow:hidden.
+
+   Duas cópias mantidas à mão são um defeito que volta; um arquivo é um
+   defeito que não volta. A partir daqui a tipografia do DOCUMENTO mora
+   só aqui: o Index a inclui para a tela e montarHtmlPdf_ a emite dentro
+   do <style> do PDF (docCss_() no Code.gs). O que se mede é o que se
+   imprime, porque é a mesma folha de estilo.
+
+   TUDO fica escopado sob .doc — a tela põe class="doc" nas caixas do
+   documento (#docMini e #docFull) e o servidor põe class="doc" no <body>
+   do PDF —, para que os mesmos seletores valham nos dois destinos sem
+   tradução.
+
+   As medidas são as do Padrão Ofício (Manual de Redação da Presidência
+   da República, 3ª edição): A4, margens de 3 cm à esquerda, 1,5 cm à
+   direita e 2 cm em cima e embaixo; Calibri/Carlito 12; entrelinhas
+   simples; 6 pt depois do parágrafo; texto justificado; recuo de 2,5 cm
+   na primeira linha; numeração a partir da segunda folha. Elas estão em
+   pt, mm e cm — nunca em px nem em em —, porque é assim que o conversor
+   de PDF as reproduz, e porque medida relativa herda o tamanho da caixa
+   em que está e deixa de ser a mesma nos dois destinos.
+
+   O que NÃO está aqui é o que é só da tela: a sombra da folha, o realce
+   do bloco, as marcas do modo de edição da curadoria e o zoom. Isso
+   continua em Css.html, e não pode alterar a MEDIDA — quem mexer ali
+   confere a bateria de paginação antes de publicar.
+   ============================================================ */
+
+/* ---------- a folha A4 ---------- */
+.doc .paginas,.doc.paginas{width:210mm;margin:0 auto}
+.doc .pagina{position:relative;width:210mm;height:297mm;padding:20mm 15mm 20mm 30mm;
+  box-sizing:border-box;page-break-after:always;page-break-inside:avoid}
+.doc .pagina:last-child{page-break-after:auto}
+.doc .pag-corpo{height:257mm;text-align:justify}
+/* v9.1: a margem DIREITA também se respeita. Uma palavra sem espaço — um
+   endereço colado no texto da escola, um código — não pode sair da caixa de
+   texto; sem esta regra ela atravessava a margem e, no papel, era cortada
+   pela borda da folha. break-word só quebra a palavra que não caberia
+   inteira em linha nenhuma; a justificação continua a mesma. */
+.doc .pag-corpo{overflow-wrap:break-word}
+/* ============================================================
+   v8.15 — A FOLHA NÃO CORTA, E A MEDIDA TEM FOLGA
+
+   Duas mudanças que andam juntas.
+
+   A primeira: o corpo da folha deixa de ter overflow:hidden. Esconder o
+   que passa é a pior saída possível num documento oficial — o texto some
+   sem erro, sem aviso e sem marca, e ninguém descobre até alguém procurar
+   a seção que não está lá. Sem o hidden, o que passar aparece: feio, e
+   visível, que é o que permite corrigir.
+
+   A segunda: quem MEDE a paginação é o navegador da escola; quem RENDERIZA
+   o PDF é o conversor do Google, e os dois não desenham a mesma linha na
+   mesma altura. Diferença de meio milímetro por linha, ao longo de
+   cinquenta linhas, é o bastante para a última não caber — e era isso que
+   empurrava conteúdo para baixo da margem inferior no papel, ainda que na
+   tela tudo coubesse. A medição passa a acontecer contra uma caixa MENOR
+   que a folha real: o que couber aqui cabe lá, com sobra.
+   ============================================================ */
+.doc.medindo .pag-corpo,.doc .medindo .pag-corpo{height:249mm}
+/* v8.13 (D17): a folha do excedente não corta — ela cresce e avisa. Sem
+   isto, o que a paginação não conseguir distribuir desapareceria atrás do
+   overflow:hidden, que é exatamente o defeito que D17 corrige. */
+.doc .pagina[data-excedente]{height:auto;min-height:297mm;overflow:visible;page-break-inside:auto}
+.doc .pagina[data-excedente] .pag-corpo{height:auto;overflow:visible}
+.doc .tarja-exc{text-align:center;border:1.5pt dashed #8A6D1F;color:#6E5615;
+  padding:8pt;margin:0 0 12pt;font-weight:bold;text-indent:0}
+/* v8.11: o rodapé de cada folha — código de autenticidade à esquerda,
+   número à direita, a partir da segunda folha */
+.doc .pag-rodape{position:absolute;left:30mm;right:15mm;bottom:8mm;display:flex;
+  align-items:flex-end;justify-content:space-between;gap:8pt;font-size:8pt;color:#333}
+.doc .pag-cod{text-align:left;line-height:1.25;text-indent:0;overflow-wrap:anywhere;min-width:0}
+.doc .pag-num{text-align:right;font-size:10pt;color:#000;white-space:nowrap}
+
+/* ---------- o corpo do texto ---------- */
+/* a entrelinha "Simples" do Padrão Ofício é a natural da fonte: até a
+   8.12 os dois lugares diziam 1.15, que em Carlito 12 dá 13,8 pt onde a
+   altura natural é 14,65 pt — o documento saía 6% mais apertado do que a
+   norma que o próprio comentário prometia */
+.doc{font-family:Carlito,Calibri,Arial,Helvetica,sans-serif;color:#000;font-size:12pt;
+  line-height:normal;text-align:justify;text-justify:inter-word}
+/* v8.12: a justificação é dita três vezes — no corpo, no parágrafo e no
+   atributo align que a tela escreve —, porque o conversor de HTML em PDF
+   do Google descarta parte do CSS e o documento oficial não pode sair com
+   o texto solto à direita. */
+.doc p{text-align:justify;margin:0 0 6pt;text-indent:25mm}
+.doc p.cont,.doc .ident,.doc .doc-sub,.doc .sum-item,.doc .ref-item,.doc .vazio,
+.doc .fonte,.doc .cx-rot,.doc .cx-nome,.doc .cx-rep,.doc .cx-quando,
+.doc td p,.doc .capa p,.doc .tarja-exc{text-indent:0}
+
+/* ---------- a capa ---------- */
+/* v8.13 (D16): o brasão tem ALTURA FIXA. Na tela o documento que vai para
+   o PDF carrega a marca <!--BRASAO--> (o servidor é que embute a imagem,
+   para não gravar 240 KB de base64 em cada PPP da rede); se a caixa não
+   reservasse a altura, a tela mediria a capa sem o brasão e o papel sairia
+   com ele — e a primeira folha fecharia em lugares diferentes. */
+.doc .brasao{height:26mm;text-align:center;margin-bottom:6pt;overflow:hidden}
+.doc .brasao img{height:26mm;width:auto;vertical-align:top}
+.doc .capa{text-align:center}
+.doc .capa .doc-title{margin-top:18pt}
+.doc .doc-org{text-align:center;text-transform:uppercase;line-height:1.5}
+.doc .doc-org .l1{font-weight:bold;font-size:13pt}
+.doc .doc-org .l2{font-size:11pt}
+.doc hr,.doc .doc-rule{border:none;border-top:1.5pt solid #000;margin:14pt 0 20pt}
+.doc .doc-title{text-align:center;margin-bottom:26pt}
+.doc .doc-title h1{font-size:16pt;letter-spacing:2pt;text-transform:uppercase;font-weight:bold;margin:0}
+.doc .doc-title .school{font-weight:bold;text-transform:uppercase;margin-top:8pt;font-size:12.5pt}
+.doc .doc-title .meta{font-size:10.5pt;color:#333;margin-top:4pt}
+
+/* ---------- títulos, identificação, seções vazias ---------- */
+.doc h3,.doc h3.doc-h{font-size:12pt;font-weight:bold;text-transform:uppercase;
+  margin:16pt 0 8pt;page-break-after:avoid}
+.doc .ident{margin:0 0 4pt;text-align:left}
+.doc .doc-sub{margin:12pt 0 6pt;text-align:left;page-break-after:avoid}
+.doc .vazio{color:#555;font-style:italic;text-align:left}
+.doc .fonte{font-size:9.5pt;color:#333;text-align:left;margin:0 0 12pt}
+.doc .doc-sep{border:none;border-top:1pt dashed #999;margin:14pt 0}
+
+/* ---------- sumário e referências ---------- */
+.doc .sumario .doc-h{margin-top:0}
+/* v8.13 (D22): o número da página à direita, na mesma linha do título —
+   um sumário sem indicativo de página não localiza nada num documento de
+   quinze folhas (ABNT NBR 6027) */
+.doc .sum-item{display:flex;justify-content:space-between;align-items:baseline;gap:6pt;
+  text-align:left;margin:0 0 5pt;border-bottom:1px dotted #999;padding-bottom:2pt}
+.doc .sum-item .sum-tx{min-width:0}
+.doc .sum-item .sum-pag{flex:0 0 auto;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.doc .refs .ref-item{text-align:left;margin:0 0 5pt;padding-left:1.2cm;text-indent:-1.2cm}
+
+/* ---------- a tabela de indicadores ---------- */
+.doc table.ind{width:100%;border-collapse:collapse;margin:0 0 10pt;font-size:10pt}
+.doc table.ind th,.doc table.ind td{border:1px solid #555;padding:4pt 5pt;text-align:center}
+.doc table.ind th{background:#E6ECF4;font-weight:bold}
+.doc table.ind td.et{text-align:left}
+
+/* ---------- as caixas de assinatura ---------- */
+/* v8.1 — tabela, e não grid, porque é o que a conversão para PDF
+   respeita; duas por linha, sem quebrar no meio de uma caixa */
+.doc table.cxs{width:100%;border-collapse:separate;border-spacing:7pt;margin:12pt 0 6pt}
+.doc table.cxs td.cxa{width:50%;border:1px solid #000;padding:7pt 9pt 6pt;vertical-align:top;page-break-inside:avoid}
+.doc table.cxs td.cxa.vazia{border:none}
+.doc .cx-rot{font-size:8.5pt;text-transform:uppercase;letter-spacing:.6pt;color:#333;margin:0;text-align:left}
+.doc .cx-esp{height:34pt}
+.doc .cx-lin{border-top:1px solid #000;margin:0 0 3pt}
+.doc .cx-nome{font-size:10.5pt;font-weight:bold;margin:0;text-align:left}
+.doc .cx-rep{font-size:9.5pt;color:#333;margin:1pt 0 0;text-align:left}
+.doc .cx-quando{font-size:8.5pt;color:#555;margin:3pt 0 0;text-align:left}
+
+/* ---------- prévia e quebra de folha ---------- */
+.doc .previa{text-align:center;border:1.5pt dashed #8A6D1F;color:#6E5615;
+  padding:8pt;margin:0 0 16pt;font-weight:bold;text-indent:0}
+.doc .quebra{page-break-after:always}
+</style>

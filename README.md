@@ -1,33 +1,35 @@
 # Gerador de PPP
 
-Sistema de elaboração, versionamento e acompanhamento de Projetos Político-Pedagógicos. O protótipo funcional permanece em `Gerador de PPP V6.5/`; a nova persistência usa Supabase.
-
-## Demonstração
-
-Após a execução do workflow **Publicar GitHub Pages**, a cópia de trabalho pode ser aberta em `https://lucaskayke814.github.io/Projeto-PPP/`. Configure as variáveis de repositório `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` antes de publicar a integração. Elas contêm apenas dados públicos do cliente; senhas, tokens administrativos e `service_role` não são usados no frontend.
+Sistema de elabora??o, versionamento e acompanhamento de Projetos Pol?tico-Pedag?gicos, baseado na refer?ncia funcional v10.2 e integrado ao Supabase.
 
 ## Estrutura
 
-| Diretório | Responsabilidade |
+| Diret?rio | Responsabilidade |
 | --- | --- |
-| `Gerador de PPP V6.5/` | Protótipo HTML monolítico e modo demonstração atual |
-| `apps/web/` | Cliente TypeScript e adaptador gradual do contrato v6.5 |
-| `supabase/migrations/` | Schema PostgreSQL, RLS, RPCs e dados de domínio |
-| `supabase/functions/` | Edge Functions para operações HTTP autorizadas |
-| `supabase/tests/` | Testes de banco pgTAP |
-| `docs/` | Decisões arquiteturais e operação local |
+| `Gerador de PPP V6.5/Gerador de PPP v10.2/` | Refer?ncia v10.2 imut?vel, usada para compara??o e gera??o de dados iniciais. |
+| `apps/web/` | Aplica??o Vite, c?pia de trabalho v10.2 e adaptador Supabase. |
+| `supabase/migrations/` | Schema PostgreSQL, RLS, RPCs e dados versionados. |
+| `supabase/functions/` | Edge Functions autorizadas, quando necess?rias. |
+| `supabase/tests/` | Testes SQL da camada de dados. |
+| `docs/` | Arquitetura, migra??o e opera??o local. |
 
-O banco é estruturado para usar Supabase Auth, PostgreSQL, Storage privado e RLS. A fonte de verdade de toda mudança de schema são as migrations. Consulte [a arquitetura do banco](docs/database-architecture.md) e [a operação local](docs/supabase-local.md) antes de vincular um projeto remoto.
+Os arquivos hist?ricos v6.5 permanecem somente como registro e n?o participam do build, das rotas ou da persist?ncia atual.
 
-O protótipo em `Gerador de PPP V6.5/` é uma referência imutável. A integração com Supabase e a nova interface serão implementadas exclusivamente em `apps/web/`.
+## Executar
 
-## Executar a cópia de trabalho
-
-O **Live Server** abre o `index.html` da raiz e, por segurança, esse arquivo continua levando ao protótipo de referência em modo demonstração. Para executar a cópia conectada ao Supabase, use o Vite:
+Crie `.env.local` a partir de `.env.example`, com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 ```powershell
-$env:Path='C:\Program Files\nodejs;'+$env:Path
 npm --prefix apps/web run dev
 ```
 
-Abra o endereço mostrado pelo Vite, normalmente `http://localhost:5173/`. O Vite lê `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` do `.env.local` na raiz; esse arquivo permanece ignorado pelo Git.
+Abra `http://127.0.0.1:5173/`. A rota principal abre a c?pia de trabalho v10.2 conectada ao Supabase.
+
+Para reconstruir a c?pia de trabalho e os cat?logos da refer?ncia:
+
+```powershell
+npm --prefix apps/web run prepare:reference
+npm --prefix apps/web run prepare:catalogs:v102
+```
+
+Consulte [a arquitetura do banco](docs/database-architecture.md), [a migra??o v10.2](docs/migracao-v10.2.md) e [a opera??o local](docs/supabase-local.md).

@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "prepare:reference": "node scripts/prepare-reference.mjs",
+    "prepare:catalogs:v102": "node scripts/extract-v102-catalogs.mjs",
     "dev": "npm run prepare:reference && vite",
     "build": "npm run prepare:reference && tsc --noEmit && vite build",
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4"
+    "@supabase/supabase-js": "^2.57.4",
+    "jspdf": "^4.2.1"
   },
   "devDependencies": {
+    "playwright-core": "^1.63.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
     "vitest": "^3.2.4"
